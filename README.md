@@ -1,7 +1,7 @@
 # End2End ML PROJECT: From text generation to deployed tone classifier
 
 ## Overview
-This project aims to generate text of various sizes using the OpenAI API, store the generated texts in MongoDB Atlas, analyze and clean them, apply different word embedding NLP techniques (Bag of Words, TF-IDF, Word2Vec, Positional Encoding) with various models, and finally deploy the best-performing model as a Flask API. The end goal is to predict the tone of input text.
+This project aims to generate text of various sizes using the OpenAI API, store the generated texts in MongoDB Atlas, analyze and clean them, apply different word embedding NLP techniques (Bag of Words, TF-IDF, Word2Vec, Positional Encoding) with various models, and finally deploy the best-performing model as a Flask API. The **end goal** is to predict the tone of input text.
 
 ## Features
 - Generate text of different sizes using OpenAI API.
@@ -24,21 +24,11 @@ The following 10 tones are considered for tone classification:
 10. Empathetic
 
 ## Setup
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/your-repository.git
-   ```
-2. Install the required dependencies:
+1. **Ensure Python and pip are installed on your system.**
+2. **Install the required dependencies in the root folder:**
    ```bash
    pip install -r requirements.txt
-   ```
-3. Set up MongoDB Atlas and configure the database connection.
-4. Update the OpenAI API key in the code.
-5. Run the project.
+3. **Copy the .env-template and rename the copy to .env and fill the required values in the new .env file.**
+   - This step is required if you want to use the generation data features (generating texts and saving in MongoDB Atlas). 
+   - Make sure you have an OpenAI API key and a MongoDB URI to fill in the `.env` file.
 
-## Usage
-1. Run the script to prompt and generate texts using the OpenAI API.
-2. The generated texts will be stored in MongoDB Atlas.
-3. Analyze and clean the generated texts.
-4. Test different word embedding NLP techniques and models.
-5. Deploy the best-performing model as a Flask API.
