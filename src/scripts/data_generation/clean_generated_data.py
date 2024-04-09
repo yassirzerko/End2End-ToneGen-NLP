@@ -5,6 +5,7 @@ from src.core.data_generation.gpt_text_generator import GPT_Text_Generator
 from src.core.data_generation.mongo_client import Mongo_Client
 from src.core.read_env import get_env_variables
 import sys
+import traceback
 
 def clean_number_pattern(collection, entry) :
     """
@@ -106,11 +107,11 @@ if __name__ == "__main__" :
     try :      
         # Initialize MongoDB client for the raw collection
         mongo_raw_client = Mongo_Client(env_variables[ENV_CONSTANTS.MONGO_URI_FIELD])
-        mongo_raw_client.connect_to_db(ENV_CONSTANTS.MONGO_DB_NAME_FIELD, ENV_CONSTANTS.DB_RAW_COLLECTION_FIELD)
+        mongo_raw_client.connect_to_db(env_variables[ENV_CONSTANTS.MONGO_DB_NAME_FIELD], env_variables[ENV_CONSTANTS.DB_RAW_COLLECTION_FIELD])
 
         # Initialize MongoDB client for the clean collection, this collection should be empty before running this script
         mongo_clean_client = Mongo_Client(env_variables[ENV_CONSTANTS.MONGO_URI_FIELD])
-        mongo_clean_client.connect_to_db(ENV_CONSTANTS.MONGO_DB_NAME_FIELD, ENV_CONSTANTS.DB_CLEAN_COLLECTION_FIELD)
+        mongo_clean_client.connect_to_db(env_variables[ENV_CONSTANTS.MONGO_DB_NAME_FIELD], env_variables[ENV_CONSTANTS.DB_CLEAN_COLLECTION_FIELD])
 
         # 1 Copy everything to the new database
         mongo_raw_client.transfert_data_to_collection(mongo_clean_client.collection)
@@ -118,7 +119,7 @@ if __name__ == "__main__" :
         # 2 Split texts that contains many texts separated by '1., 2. ...' into new entries
         contain_number_pattern = re.compile(r'\d+\.')
         number_pattern_query = {'Text' : {'$regex': contain_number_pattern}}
-        mongo_clean_client.update_collection_with_fun(number_pattern_query, clean_number_pattern)
+        #mongo_clean_client.update_collection_with_fun(number_pattern_query, clean_number_pattern)
 
         # 3 Update the word counter of all the texts after the changes
         mongo_clean_client.update_collection_with_fun({}, clean_word_counter)
@@ -133,12 +134,18 @@ if __name__ == "__main__" :
 
         for update_query, update_operation in labeled_size_update_params :
             mongo_clean_client.update_collection(update_query, update_operation)
+            
          
         # 5 Remove duplicates
         pipeline_remove_duplicate = [{'$group' : {MONGO_DB_CONSTANTS.ID_FIELD: '$Text', 'first_document_id' : {'$first' : '$_id'}}}]
         mongo_clean_client.execute_aggregate_pipeline_operation(pipeline_remove_duplicate, remove_duplicates_texts)
+
+        # 6 Remove emtpy texts
+        mongo_clean_client.delete_many({MONGO_DB_CONSTANTS.N_WORDS_FIELD : {'$lte': 2}})
     
     except Exception as e : 
       print('An error occured : ')
       print(e)
+      traceback_info = traceback.format_exc()
+      print(traceback_info)
       sys.exit(1)

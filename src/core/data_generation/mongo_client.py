@@ -67,5 +67,8 @@ class Mongo_Client:
         if fields_to_return is not None:
             return self.collection.find(find_query, fields_to_return)
         return self.collection.find(find_query)
+    
+    def delete_many(self, find_query) :
+        self.collection.delete_many(find_query)
 
 

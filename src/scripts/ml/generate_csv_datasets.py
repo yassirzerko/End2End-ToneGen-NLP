@@ -6,7 +6,8 @@ import sys
 from src.core.read_env import get_env_variables
 from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS
 from src.core.data_generation.mongo_client import Mongo_Client
-from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
+import traceback
 
 
 def get_csv_columns_name(train_voc_set) : 
@@ -16,10 +17,6 @@ def get_csv_columns_name(train_voc_set) :
 def get_columns_name_word2_vec() :
     columns_name = [MONGO_DB_CONSTANTS.ID_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD] + [idx for idx in range(300)]
     return columns_name
-
-
-
-
 
 def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data, w2v_converter, output_folder, file_name) : 
     """
@@ -36,7 +33,7 @@ def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data
     """
 
     # Open files for writing
-    bow_file  = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.BOW}_{file_name}csv'), 'w+')
+    bow_file  = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.BOW}_{file_name}.csv'), 'w+')
     tf_idf_file = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.TF_IDF}_{file_name}.csv'), 'w+')
     w2v_max_file = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.W2V_MAX}_{file_name}.csv'), 'w+')
     w2v_sum_file = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.W2V_SUM}_{file_name}.csv'), 'w+')
@@ -57,6 +54,7 @@ def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data
     w2v_mean_writer.writerow(get_columns_name_word2_vec())
 
     for entry in data :
+        print(str(entry[MONGO_DB_CONSTANTS.ID_FIELD]))
         new_row = [str(entry[MONGO_DB_CONSTANTS.ID_FIELD]), entry[MONGO_DB_CONSTANTS.TONE_FIELD]]
 
         bow_feature_vector, tf_idf_feature_vector = MlUtils.generate_bow_tf_idf_feature_vector(words_idf_data, entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
@@ -95,9 +93,9 @@ def generate_multi_representation_split_csv(train_ids, test_ids, split_output_fo
     train_voc_set = set(words_idf_data.keys())
 
     train_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : train_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    create_multi_representation_datasets_csv(train_data, train_voc_set, words_idf_data, w2v_converter, 'train')
+    create_multi_representation_datasets_csv(train_data, train_voc_set, words_idf_data, w2v_converter, split_output_folder, 'train')
     test_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : test_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    create_multi_representation_datasets_csv(test_data, train_voc_set, words_idf_data, w2v_converter, 'test')
+    create_multi_representation_datasets_csv(test_data, train_voc_set, words_idf_data, w2v_converter, split_output_folder, 'test')
 
     
 if __name__ == '__main__' :
@@ -121,29 +119,31 @@ if __name__ == '__main__' :
     try:
         # Initialize MongoDB client
         mongo_client = Mongo_Client(env_variables[ENV_CONSTANTS.MONGO_URI_FIELD])
-        mongo_client.connect_to_db(ENV_CONSTANTS.MONGO_DB_NAME_FIELD, ENV_CONSTANTS.DB_CLEAN_COLLECTION_FIELD)
+        mongo_client.connect_to_db(env_variables[ENV_CONSTANTS.MONGO_DB_NAME_FIELD], env_variables[ENV_CONSTANTS.DB_CLEAN_COLLECTION_FIELD])
         
-        print('0')
+       
         # Load pre-trained Word2Vec model
-        print(str(os.path.join('models', 'word2vec-google-news-300.model')))
-        word2vec_converter = Word2Vec.load(str(os.path.join('models', 'word2vec-google-news-300.model')))
+        w2v_convert = KeyedVectors.load('glove-wiki-300-w2v.wordvectors', mmap='r')
 
-        print('A')
+      
         # Get balanced k-fold splits
         splits = MlUtils.get_k_folds_balanced_splits_ids(mongo_client, k=3)
-        print('B')
+        
         # Iterate over splits
         for split_idx, split in enumerate(splits):
             train_ids, test_ids = split[0], split[1]
+
         
             # Create output folder for the split
             split_output_folder = os.path.join(output_folder, f'split{split_idx}')
             os.mkdir(split_output_folder)
 
             # Generate split datasets with multiple representations
-            generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder, word2vec_converter)
+            generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder, w2v_convert)
     
     except Exception as e:
         print('An error occurred:')
         print(e)
+        traceback_info = traceback.format_exc()
+        print(traceback_info)
         sys.exit(1)

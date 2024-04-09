@@ -11,13 +11,6 @@ def get_env_variables():
     - error_msg: A string containing an error message if an error occurred, else an empty string.
     """
 
-    
-    with open('.env', "r") as f:
-        for line in f:
-            if line.strip() and not line.startswith("#"):
-                key, value = line.strip().split("=", 1)
-                
-
     # List of environment variable names expected to be present
     env_variable_names = [
         ENV_CONSTANTS.OPEN_AI_API_FIELD,

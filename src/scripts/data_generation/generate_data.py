@@ -4,6 +4,7 @@ from src.core.data_generation.gpt_text_generator import GPT_Text_Generator
 from src.core.data_generation.mongo_client import Mongo_Client
 from src.core.read_env import get_env_variables
 import sys
+import traceback
 
 
 def generate_data(text_generator, mongo_client, n_required_paragraph_by_tone, size, gpt_model_name) :
@@ -65,7 +66,7 @@ if __name__ == '__main__' :
 
       # Initialize MongoDB client
       mongo_client = Mongo_Client(env_variables[ENV_CONSTANTS.MONGO_URI_FIELD])
-      mongo_client.connect_to_db(ENV_CONSTANTS.MONGO_DB_NAME_FIELD, ENV_CONSTANTS.DB_RAW_COLLECTION_FIELD)
+      mongo_client.connect_to_db(env_variables[ENV_CONSTANTS.MONGO_DB_NAME_FIELD], env_variables[ENV_CONSTANTS.DB_RAW_COLLECTION_FIELD])
 
       # Generate data for each combination of texts and sizes
       for (n_texts, size) in inputs_combinations :
@@ -74,5 +75,7 @@ if __name__ == '__main__' :
     except Exception as e : 
       print('An error occured : ')
       print(e)
+      traceback_info = traceback.format_exc()
+      print(traceback_info)
       sys.exit(1)
        

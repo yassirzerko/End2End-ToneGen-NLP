@@ -62,11 +62,18 @@ class MlUtils :
                 nb_entries_by_fold = int(len(data) / k)
 
                 for n_fold in range (k) : 
-                    nb_ids_to_add = nb_entries_by_fold if  k*nb_entries_by_fold + nb_entries_by_fold <= len(data) else len(data)
-                    fold_data = data[k*nb_entries_by_fold : k*nb_entries_by_fold + nb_ids_to_add]
+                    start_range = n_fold*nb_entries_by_fold 
+                    end_range = start_range + nb_entries_by_fold
+                    if end_range > len(data) :
+                        end_range = len(data)
+                    
+                    if n_fold == k - 1 and end_range < len(data) :
+                        end_range = len(data)
+                    fold_data = data[start_range : end_range]                  
 
                     folds_ids[n_fold] += [entry[MONGO_DB_CONSTANTS.ID_FIELD] for entry in fold_data]
 
+            
         return folds_ids
     
 
@@ -90,6 +97,8 @@ class MlUtils :
             uniques = list(set(words))
             n_texts  += 1
             for word in uniques :
+                if word =='' :
+                    continue
                 if word not in words_idf :
                     words_idf[word] = 0
                 words_idf[word] += 1
@@ -130,11 +139,15 @@ class MlUtils :
         words = re.split(r'\W+', text)
         text_words_count = {word : 0 for word in train_voc_set}
 
-        n_terms = len(words)
+        n_terms = 0
 
         # Compute word counts for words in the vocabulary set
         for word in words :
-            if word not in train_voc_set :
+            if word == '' :
+                continue 
+            n_terms += 1
+
+            if word not in train_voc_set : 
                 continue
             text_words_count[word] += 1
         
@@ -146,7 +159,7 @@ class MlUtils :
         text_words_count, n_terms = MlUtils.get_words_count_data(text, train_voc_set)
 
         bow_feature_vector = [text_words_count[word] for word in list(train_voc_set)]
-        tf_idf_feature_vector = [(text_words_count[word]/ n_terms) * tf_idf_data[word] for word in list(train_voc_set)]
+        tf_idf_feature_vector = [(text_words_count[word] / n_terms) * tf_idf_data[word] for word in list(train_voc_set)]
 
         return bow_feature_vector, tf_idf_feature_vector
     
@@ -170,13 +183,19 @@ class MlUtils :
 
         max_dims = [- math.inf ] * 300
         sum_dims = [0] * 300
+        word_counter = 0
         for word in words : 
+            if word == '' : 
+                continue
+            word_counter += 1
+            if word not in word2vec_converter :
+                continue
             vector = word2vec_converter[word]
             for dim_idx, dim_value in enumerate(vector) : 
                 max_dims[dim_idx] = max(max_dims[dim_idx], dim_value)
                 sum_dims[dim_idx] += dim_value
         
-        mean_dims = [dim_sum / len(words) for dim_sum in sum_dims]
+        mean_dims = [dim_sum / word_counter for dim_sum in sum_dims]
 
         return max_dims, sum_dims, mean_dims
     

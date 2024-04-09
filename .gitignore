@@ -3,3 +3,25 @@ venv/
 ENV/
 env/
 __pycache__/
+
+# Dependency directories
+/node_modules
+
+# Build output
+/build
+/dist
+
+# Environment variables
+.env
+
+# IDE/Editor specific files
+*.log
+*.DS_Store
+.vscode/
+
+# Other generated files
+.cache/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
