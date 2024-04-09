@@ -1,4 +1,4 @@
-from dotenv import dotenv_values
+
 from src.core.constants import ENV_CONSTANTS
 
 def get_env_variables():
@@ -10,6 +10,14 @@ def get_env_variables():
     - error: A boolean indicating whether an error occurred during retrieval.
     - error_msg: A string containing an error message if an error occurred, else an empty string.
     """
+
+    
+    with open('.env', "r") as f:
+        for line in f:
+            if line.strip() and not line.startswith("#"):
+                key, value = line.strip().split("=", 1)
+                
+
     # List of environment variable names expected to be present
     env_variable_names = [
         ENV_CONSTANTS.OPEN_AI_API_FIELD,
@@ -18,9 +26,15 @@ def get_env_variables():
         ENV_CONSTANTS.DB_CLEAN_COLLECTION_FIELD
     ]
 
+    env_variables = {}
+
     try:
-        # Load environment variables from the dotenv file
-        env_variables = dotenv_values(ENV_CONSTANTS.ENV_FILE_NAME)
+        # Load environment variables from the .env file
+        with open('.env', "r") as f:
+            for line in f:
+                if line.strip() and not line.startswith("#"):
+                    key, value = line.strip().split("=", 1)
+                    env_variables[key] = value
 
         # Check for missing environment variables
         missing_env_variables = [env_variable_name for env_variable_name in env_variable_names if env_variable_name not in env_variables]

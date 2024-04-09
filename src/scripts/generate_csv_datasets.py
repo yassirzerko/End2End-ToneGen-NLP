@@ -8,11 +8,11 @@ from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS
 from src.core.data_generation.mongo_client import Mongo_Client
 import re
 import math
-import gensim.models as Word2Vec
+from gensim.models import Word2Vec
 
 
 def get_csv_columns_name(train_voc_set) : 
-    columns_name = [MONGO_DB_CONSTANTS.ID_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD] + [idx for idx,word in enumerate(list(train_voc_set))]
+    columns_name = [MONGO_DB_CONSTANTS.ID_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD] + [idx for idx, _ in enumerate(list(train_voc_set))]
     return columns_name
 
 def get_columns_name_word2_vec() :
@@ -57,17 +57,17 @@ def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data
     - train_voc_set: Set of vocabulary words used for training.
     - words_idf_data: Dictionary containing IDF values for words.
     - w2v_converter: Word2Vec converter object.
-    - split_output_folder: Path to the output folder for storing the split datasets.
+    - output_folder: Path to the output folder for storing the datasets.
     - file_name: Name of the output files (train or test).
 
     """
 
     # Open files for writing
-    bow_file  = open(os.path.join(split_output_folder, f'bow_{file_name}csv'), 'w+')
-    tf_idf_file = open(os.path.join(split_output_folder, f'tf_idf_{file_name}.csv'), 'w+')
-    w2v_max_file = open(os.path.join(split_output_folder, f'w2v_max_{file_name}.csv'), 'w+')
-    w2v_sum_file = open(os.path.join(split_output_folder, f'w2v_sum_{file_name}.csv'), 'w+')
-    w2v_mean_file = open(os.path.join(split_output_folder, f'w2v_mean_{file_name}.csv'), 'w+')
+    bow_file  = open(os.path.join(output_folder, f'bow_{file_name}csv'), 'w+')
+    tf_idf_file = open(os.path.join(output_folder, f'tf_idf_{file_name}.csv'), 'w+')
+    w2v_max_file = open(os.path.join(output_folder, f'w2v_max_{file_name}.csv'), 'w+')
+    w2v_sum_file = open(os.path.join(output_folder, f'w2v_sum_{file_name}.csv'), 'w+')
+    w2v_mean_file = open(os.path.join(output_folder, f'w2v_mean_{file_name}.csv'), 'w+')
 
     # Create CSV writers
     bow_writer =  csv.writer(bow_file)
@@ -79,9 +79,9 @@ def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data
     # Write column headers
     bow_writer.writerow(get_csv_columns_name(train_voc_set))
     tf_idf_writer.writerow(get_csv_columns_name(train_voc_set))
-    w2v_max_writer.writerow(generate_word2vec_feature_vector())
-    w2v_sum_writer.writerow(generate_word2vec_feature_vector())
-    w2v_mean_writer.writerow(generate_word2vec_feature_vector())
+    w2v_max_writer.writerow(get_columns_name_word2_vec())
+    w2v_sum_writer.writerow(get_columns_name_word2_vec())
+    w2v_mean_writer.writerow(get_columns_name_word2_vec())
 
     for entry in data :
         new_row = [str(entry[MONGO_DB_CONSTANTS.ID_FIELD]), entry[MONGO_DB_CONSTANTS.TONE_FIELD]]
