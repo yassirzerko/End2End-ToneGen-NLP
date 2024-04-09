@@ -72,7 +72,7 @@ class GPT_Text_Generator :
 
         Args:
         - tone (str): The tone of the text.
-        - size (str): The size of the text (e.g., 'small', 'medium', 'large').
+        - size (str): The size of the text (e.g., 'small', 'medium', 'large', 'very-large').
         - n_required_paragraph (int): The number of paragraphs to generate.
         - gpt_model_name (str): The name of the GPT model to use for generation.
 
