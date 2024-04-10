@@ -3,13 +3,14 @@ import math
 from src.core.constants import TONES_CONSTANTS, SIZE_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS
 import re
 import pandas as pd
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 from sklearn.metrics import classification_report
 import joblib
 import os
 import json
 from gensim.models import Word2Vec
 import csv
+from itertools import product
 
 class MlUtils : 
     @staticmethod
@@ -107,35 +108,69 @@ class MlUtils :
         return words_idf
     
     @staticmethod
-    def execute_train_test(train_path, test_path, model, save_folder, model_name) :
+    def execute_train_test(train_path, test_path, model, save_folder, model_name, one_hot_encode = False) :
+        """
+        Execute training and testing of a machine learning model and save the model, it's predictions for the test set and the train and test classification reports.
+
+        Args:
+            train_path (str): Path to the training dataset.
+            test_path (str): Path to the testing dataset.
+            model: The machine learning model to train and test.
+            save_folder (str): Folder path to save the trained model and reports.
+            model_name (str): Name of the model for saving purposes.
+            one_hot_encode (bool, optional): Whether to perform one-hot encoding. Default is False.
+        """
         train_df = pd.read_csv(train_path)
         test_df = pd.read_csv(test_path)
 
-        X_train, y_train = train_df.drop(columns=[MONGO_DB_CONSTANTS.GENERATED_BY_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD,  MONGO_DB_CONSTANTS.ID_FIELD]), train_df[MONGO_DB_CONSTANTS.TONE_FIELD]
-        X_test, y_test = test_df.drop(columns=[MONGO_DB_CONSTANTS.GENERATED_BY_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD,  MONGO_DB_CONSTANTS.ID_FIELD]), test_df[MONGO_DB_CONSTANTS.TONE_FIELD]
+        X_train, y_train = train_df.drop(columns=[MONGO_DB_CONSTANTS.TONE_FIELD,  MONGO_DB_CONSTANTS.ID_FIELD]), train_df[MONGO_DB_CONSTANTS.TONE_FIELD]
+        X_test, y_test = test_df.drop(columns=[MONGO_DB_CONSTANTS.TONE_FIELD,  MONGO_DB_CONSTANTS.ID_FIELD]), test_df[MONGO_DB_CONSTANTS.TONE_FIELD]
 
-        one_hot_encoder = LabelBinarizer()
-        y_train = one_hot_encoder.fit_transform(y_train)
-        y_test = one_hot_encoder.transform(y_test)
-
+        encoder = LabelBinarizer() if one_hot_encode else LabelEncoder()
+        
+        y_train = encoder.fit_transform(y_train)
+        y_test = encoder.transform(y_test)
 
         model.fit(X_train, y_train)
-        test_preds = model.predict(X_test)
-
-        print(classification_report(y_test, test_preds))
         joblib.dump(model, os.path.join(save_folder, model_name + '.pkl'))
-        with open(os.path.join(save_folder, 'predictions.csv')) as predictions_file : 
+
+        train_predictions = model.predict(X_train)
+        train_classification_report = classification_report(train_predictions, y_train)
+        train_classification_file_report = open(os.path.join(save_folder, 'train_report.txt'), 'w+')
+        train_classification_file_report.write(train_classification_report)
+        train_classification_file_report.close()
+
+
+        test_preds = model.predict(X_test)
+        test_classification_report = classification_report(y_test, test_preds)
+        test_classification_report_file = open(os.path.join(save_folder, 'test_report.txt'), 'w+')
+        test_classification_report_file.write(test_classification_report)
+        test_classification_report_file.close()
+  
+        with open(os.path.join(save_folder, 'predictions.csv'), 'w+') as predictions_file : 
             writer = csv.writer(predictions_file)
             writer.writerow(['_id', 'label', 'prediction'])
 
             for pred_idx, prediction in enumerate(test_preds) : 
                 writer.writerow([test_df.iloc[pred_idx][MONGO_DB_CONSTANTS.ID_FIELD],y_test[pred_idx], prediction])
 
-            writer.close()
+        predictions_file.close()
 
 
     @staticmethod
     def get_words_count_data(text, train_voc_set) :
+        """
+        Computes the count of each word in the vocabulary set within the given text 
+        and the total number of terms (non-empty words) in the text.
+
+        Parameters:
+        - text: The input text to analyze.
+        - train_voc_set: A set containing the vocabulary words to count occurrences for.
+
+        Returns:
+        - text_words_count: A dictionary containing the count of each word from the vocabulary set in the text.
+        - n_terms: The total number of terms (non-empty words) in the text.
+        """
         words = re.split(r'\W+', text)
         text_words_count = {word : 0 for word in train_voc_set}
 
@@ -154,12 +189,23 @@ class MlUtils :
         return text_words_count, n_terms
     
     @staticmethod
-    def generate_bow_tf_idf_feature_vector(tf_idf_data,text) :
-        train_voc_set = set(tf_idf_data.keys())
+    def generate_bow_tf_idf_feature_vector(idf_data,text) :
+        """
+        Generates Bag-of-Words (BoW) and TF-IDF feature vectors for the given text.
+
+        Parameters:
+        - idf_data: A dictionary containing inverse document frequency (IDF) scores for words in the vocabulary.
+        - text: The input text for which to generate the feature vectors.
+
+        Returns:
+        - bow_feature_vector: Bag-of-Words (BoW) feature vector for the text.
+        - tf_idf_feature_vector: TF-IDF feature vector for the text.
+        """
+        train_voc_set = set(idf_data.keys())
         text_words_count, n_terms = MlUtils.get_words_count_data(text, train_voc_set)
 
         bow_feature_vector = [text_words_count[word] for word in list(train_voc_set)]
-        tf_idf_feature_vector = [(text_words_count[word] / n_terms) * tf_idf_data[word] for word in list(train_voc_set)]
+        tf_idf_feature_vector = [(text_words_count[word] / n_terms) * idf_data[word] for word in list(train_voc_set)]
 
         return bow_feature_vector, tf_idf_feature_vector
     
@@ -201,6 +247,21 @@ class MlUtils :
     
     @staticmethod
     def use_trained_model_to_preidct_tone(model_path, input_text, **kwargs) :
+        """
+        Uses a trained machine learning model to predict the tone of the given input text.
+
+        Parameters:
+        - model_path: The path to the trained machine learning model file.
+        - input_text: The input text for which to predict the tone.
+        - **kwargs: Additional keyword arguments.
+            - feature_vector_format: The format of the feature vectors ('bow', 'tf-idf', 'w2v_max', 'w2v_sum', 'w2v_mean').
+            - tf-idf-data-path: The path to the TF-IDF data file (required for 'bow' or 'tf-idf' feature formats).
+            - w2v_model_path: The path to the Word2Vec model file (required for Word2Vec feature formats).
+
+        Returns:
+        - prediction: The predicted tone of the input text.
+        """
+
         model = joblib.load(model_path)
         
         feature_vector_format = kwargs['feature_vector_format']

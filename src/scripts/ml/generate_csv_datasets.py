@@ -123,7 +123,7 @@ if __name__ == '__main__' :
         
        
         # Load pre-trained Word2Vec model
-        w2v_convert = KeyedVectors.load('glove-wiki-300-w2v.wordvectors', mmap='r')
+        w2v_convert = KeyedVectors.load(os.path.join('w2v-model', 'glove-wiki-300-w2v.wordvectors'), mmap='r')
 
       
         # Get balanced k-fold splits
