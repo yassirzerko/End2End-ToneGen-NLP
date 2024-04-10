@@ -1,8 +1,8 @@
 
 import re
-from src.core.constants import TONES_CONSTANTS, OpenAIConstants, SIZE_CONSTANTS, ENV_CONSTANTS, MONGO_DB_CONSTANTS
-from src.core.data_generation.gpt_text_generator import GPT_Text_Generator
-from src.core.data_generation.mongo_client import Mongo_Client
+from src.core.constants import SIZE_CONSTANTS, ENV_CONSTANTS, MONGO_DB_CONSTANTS
+from src.core.text_generation.gpt_text_generator import GPT_Text_Generator
+from src.core.text_generation.mongo_client import Mongo_Client
 from src.core.read_env import get_env_variables
 import sys
 import traceback

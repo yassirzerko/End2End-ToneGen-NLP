@@ -1,10 +1,8 @@
-from src.core.ml_utils.ml_utils import MlUtils
+from src.core.ml.ml_models_utils import MlModelsUtils
 from src.core.constants import FEATURE_FORMAT_CONSTANTS
 import os
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
-from sklearn.naive_bayes import BernoulliNB, GaussianNB
 from sklearn.neural_network import MLPClassifier
-from sklearn.neighbors import KNeighborsClassifier
 
 
 def train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format, one_hot_encode) :
@@ -34,7 +32,7 @@ def train_test_save_model(n_split, dataset_folder, output_folder, model, feature
         train_path = os.path.join(data_split_path, feature_vector_format + '_train.csv')
         test_path = os.path.join(data_split_path, feature_vector_format + '_test.csv')
         
-        MlUtils.execute_train_test(train_path, test_path, model, save_folder_path, str(model), one_hot_encode)
+        MlModelsUtils.execute_train_test(train_path, test_path, model, save_folder_path, str(model), one_hot_encode)
 
 if __name__ == "__main__" :
     '''

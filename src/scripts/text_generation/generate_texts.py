@@ -1,13 +1,13 @@
 import random
 from src.core.constants import TONES_CONSTANTS, OpenAIConstants, SIZE_CONSTANTS, ENV_CONSTANTS, MONGO_DB_CONSTANTS
-from src.core.data_generation.gpt_text_generator import GPT_Text_Generator
-from src.core.data_generation.mongo_client import Mongo_Client
+from src.core.text_generation.gpt_text_generator import GPT_Text_Generator
+from src.core.text_generation.mongo_client import Mongo_Client
 from src.core.read_env import get_env_variables
 import sys
 import traceback
 
 
-def generate_data(text_generator, mongo_client, n_required_paragraph_by_tone, size, gpt_model_name) :
+def generate_texts(text_generator, mongo_client, n_required_paragraph_by_tone, size, gpt_model_name) :
     """
     Generate data by generating paragraphs of text for each tone and inserting them into a MongoDB database.
 
@@ -70,7 +70,7 @@ if __name__ == '__main__' :
 
       # Generate data for each combination of texts and sizes
       for (n_texts, size) in inputs_combinations :
-        generate_data(text_generator, mongo_client, n_texts, size, gpt_model_name)
+        generate_texts(text_generator, mongo_client, n_texts, size, gpt_model_name)
     
     except Exception as e : 
       print('An error occured : ')

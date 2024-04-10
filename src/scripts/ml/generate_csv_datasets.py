@@ -1,11 +1,12 @@
 import csv
 import json
 import os
-from src.core.ml_utils.ml_utils import MlUtils
+from src.core.ml.ml_dataset_utils import MlDatasetUtils
+from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 import sys
 from src.core.read_env import get_env_variables
 from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS
-from src.core.data_generation.mongo_client import Mongo_Client
+from src.core.text_generation.mongo_client import Mongo_Client
 from gensim.models import KeyedVectors
 import traceback
 
@@ -18,7 +19,7 @@ def get_columns_name_word2_vec() :
     columns_name = [MONGO_DB_CONSTANTS.ID_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD] + [idx for idx in range(300)]
     return columns_name
 
-def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data, w2v_converter, output_folder, file_name) : 
+def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data, w2v_converter_path, output_folder, file_name) : 
     """
     Generates split datasets for Bag-of-Words (BoW), TF-IDF, and 3 Word2Vec representations (max, mean, sum).
 
@@ -26,7 +27,7 @@ def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data
     - data: List of data entries.
     - train_voc_set: Set of vocabulary words used for training.
     - words_idf_data: Dictionary containing IDF values for words.
-    - w2v_converter: Word2Vec converter object.
+    - w2v_converter_path: Word2Vec converter object path.
     - output_folder: Path to the output folder for storing the datasets.
     - file_name: Name of the output files (train or test).
 
@@ -57,11 +58,11 @@ def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data
         print(str(entry[MONGO_DB_CONSTANTS.ID_FIELD]))
         new_row = [str(entry[MONGO_DB_CONSTANTS.ID_FIELD]), entry[MONGO_DB_CONSTANTS.TONE_FIELD]]
 
-        bow_feature_vector, tf_idf_feature_vector = MlUtils.generate_bow_tf_idf_feature_vector(words_idf_data, entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
+        bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(words_idf_data, entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
         bow_writer.writerow(new_row + bow_feature_vector)
         tf_idf_writer.writerow(new_row + tf_idf_feature_vector)
 
-        max, sum, mean = MlUtils.generate_word2vec_feature_vector(w2v_converter, entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
+        max, sum, mean = NlpFeaturesUtils.generate_word2vec_feature_vector(w2v_converter_path, entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
         w2v_max_writer.writerow(new_row + max)
         w2v_sum_writer.writerow(new_row + sum)
         w2v_mean_writer.writerow(new_row + mean)
@@ -73,7 +74,7 @@ def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data
     w2v_sum_file.close()
     w2v_mean_file.close()
 
-def generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder, w2v_converter) :
+def generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder, w2v_converter_path) :
     """
     Generates split CSV files with multiple representations (Bag-of-Words (BoW), TF-IDF, and 3 Word2Vec representations (max, mean, sum)) for training and testing datasets.
 
@@ -81,11 +82,11 @@ def generate_multi_representation_split_csv(train_ids, test_ids, split_output_fo
     - train_ids: List of IDs for training data.
     - test_ids: List of IDs for testing data.
     - split_output_folder: Path to the output folder for storing the split CSV files.
-    - w2v_converter: Word2Vec converter object.
+    - w2v_converter_path: Word2Vec converter object path.
     """
 
     train_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : train_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    words_idf_data = MlUtils.get_word_idf_data(train_data)
+    words_idf_data = NlpFeaturesUtils.get_word_idf_data(train_data)
     words_idf_json_file = open(os.path.join(split_output_folder, 'tf-idf-data.json'), 'w+')
     json.dump(words_idf_data, words_idf_json_file)
     words_idf_json_file.close()
@@ -93,9 +94,9 @@ def generate_multi_representation_split_csv(train_ids, test_ids, split_output_fo
     train_voc_set = set(words_idf_data.keys())
 
     train_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : train_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    create_multi_representation_datasets_csv(train_data, train_voc_set, words_idf_data, w2v_converter, split_output_folder, 'train')
+    create_multi_representation_datasets_csv(train_data, train_voc_set, words_idf_data, w2v_converter_path, split_output_folder, 'train')
     test_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : test_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    create_multi_representation_datasets_csv(test_data, train_voc_set, words_idf_data, w2v_converter, split_output_folder, 'test')
+    create_multi_representation_datasets_csv(test_data, train_voc_set, words_idf_data, w2v_converter_path, split_output_folder, 'test')
 
     
 if __name__ == '__main__' :
@@ -123,11 +124,11 @@ if __name__ == '__main__' :
         
        
         # Load pre-trained Word2Vec model
-        w2v_convert = KeyedVectors.load(os.path.join('w2v-model', 'glove-wiki-300-w2v.wordvectors'), mmap='r')
+        w2v_convert_path = os.path.join('w2v-model', 'glove-wiki-300-w2v.wordvectors')
 
       
         # Get balanced k-fold splits
-        splits = MlUtils.get_k_folds_balanced_splits_ids(mongo_client, k=3)
+        splits = MlDatasetUtils.get_k_folds_balanced_splits_ids(mongo_client, k=3)
         
         # Iterate over splits
         for split_idx, split in enumerate(splits):
@@ -139,7 +140,7 @@ if __name__ == '__main__' :
             os.mkdir(split_output_folder)
 
             # Generate split datasets with multiple representations
-            generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder, w2v_convert)
+            generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder, w2v_convert_path)
     
     except Exception as e:
         print('An error occurred:')
