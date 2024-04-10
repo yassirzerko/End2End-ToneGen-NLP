@@ -36,7 +36,7 @@ def train_test_save_model(n_split, dataset_folder, output_folder, model, feature
 
 if __name__ == "__main__" :
     '''
-    This script trains and tests and save machine learning models with different parameters and feature vector formats.
+    This script trains and tests and save machine learning models with different parameters and feature vector formats with k-fold-cross-validation using the generated csv datasets.
     '''
 
     dataset_folder = 'datasets'

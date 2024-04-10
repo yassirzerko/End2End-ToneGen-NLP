@@ -1,14 +1,27 @@
 # End2End ML PROJECT: From text generation to deployed tone classifier
 
 ## Overview
-This project aims to generate text of various sizes using the OpenAI API, store the generated texts in MongoDB Atlas, analyze and clean them, apply different word embedding NLP techniques (Bag of Words, TF-IDF, Word2Vec, Positional Encoding) with various models, and finally deploy the best-performing model as a Flask API. The **end goal** is to predict the tone of input text.
+This project aims to generate text of various sizes and tones using the OpenAI API, store the generated texts in MongoDB Atlas, analyze and clean them, apply different word embedding NLP techniques (Bag of Words, TF-IDF, Word2Vec) with various models, and finally deploy the best-performing model as a Flask API and provide access to it throught a simple `React` client. The **end goal** is to predict the tone of input text.
 
 ## Features
-- Generate text of different sizes using OpenAI API.
-- Store generated texts in MongoDB Atlas.
-- Analyze and clean generated texts, handling duplication and generation errors, in a separate MongoDB database.
-- Test multiple word embedding NLP techniques (Bag of Words, TF-IDF, Word2Vec, Positional Encoding) with various models.
+- Generate text of different tones and sizes using OpenAI API.
+- Store the generated texts in MongoDB Atlas.
+- Clean the generated texts, handling duplication and generation errors, in a separate MongoDB database.
+- Test multiple word embedding NLP techniques (Bag of Words, TF-IDF, Word2Vec) with various models.
 - Deploy the best-performing model as a Flask API for tone prediction.
+- Provide a user-friendly interface for the tone predictor through a simple React application
+
+## Scripts 
+The project comprises various distinct scripts, each serving a specific purpose. Here are their functionalities.
+
+| Script Name                                   | Script Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+|-----------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| src.script.text_generation.generate_texts    | Generate data by creating paragraphs of text with `OpenAi` API for each tone and inserting them into a MongoDB database.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| src.script.text_generation.clean_generated_texts.py | Clean and preprocess text data stored in a MongoDB collection. This scripts performs data cleaning and preprocessing operations. The operations include transferring data from the raw collection to the clean collection, splitting texts containing numbered patterns into separate entries, updating the word count for each text entry, adding labeled sizes based on word count thresholds, and removing duplicate text entries except for the first occurrence.                                                                                                                                                                                                                                                                                                                                                  |
+| src.scripts.ml.generate_feature_csv_datasets  | Generate balanced split datasets with multiple feature representation techniques for machine learning tasks. It generates CSV files for each split and each feature representation technique                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| src.scripts.ml.train_test_save_models        | Train, test, and save machine learning models with different parameters and feature feature representation techniques with k-fold cross-validation using the CSV-generated dataset.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| src.scripts.ml.load_trained_models_data      | Collect data about training and testing fold validation and get the accuracy of the best model for each combination of model, feature vector format, and its path necessary for operating the web application.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+
 
 ## Tones
 The following 10 tones are considered for tone classification:
@@ -22,6 +35,33 @@ The following 10 tones are considered for tone classification:
 8. Narrative
 9. Analytical
 10. Empathetic
+
+## Feature Representation Techniques
+
+**General Explanation**
+
+Feature representation techniques transform text into a format that machine learning models can understand. In this project, five distinct methods of feature representation are employed to characterize texts. Here are the used feature representation techniques in the project.
+
+**Bag of Visual Words (BoVW)**
+
+Represent text by counting occurrences of visual word 'clusters' in a predefined vocabulary.
+
+**Term Frequency-Inverse Document Frequency (TF-IDF)**
+
+Weigh each word by its frequency in the document and its rarity across documents.
+
+**Sum of Each Dimension**
+
+Calculate the sum of word embeddings across each dimension in the Word2Vec space.
+
+**Mean of Each Dimension**
+
+Compute the average of word embeddings across each dimension in the Word2Vec space.
+
+**Max of Each Dimension**
+
+Determine the maximum value of word embeddings across each dimension in the Word2Vec space.
+
 
 ## Setup
 1. **Ensure Python and pip are installed on your system.**

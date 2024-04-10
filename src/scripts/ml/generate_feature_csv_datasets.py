@@ -7,7 +7,6 @@ import sys
 from src.core.read_env import get_env_variables
 from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS
 from src.core.text_generation.mongo_client import Mongo_Client
-from gensim.models import KeyedVectors
 import traceback
 
 

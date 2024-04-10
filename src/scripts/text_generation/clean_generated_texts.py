@@ -89,7 +89,7 @@ if __name__ == "__main__" :
     
     Retrieves environment variables, initializes MongoDB clients, and performs data cleaning and preprocessing operations.
     The operations include:
-    1. Transferring data from the raw collection to the clean collection.
+    1. Transferring data from the raw collection to the clean collection. (The clean collection should be empty)
     2. Splitting texts containing numbered patterns into separate entries.
     3. Updating the word count for each text entry.
     4. Adding labeled sizes based on word count thresholds.
