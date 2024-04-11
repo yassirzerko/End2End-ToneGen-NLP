@@ -57,7 +57,7 @@ def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data
         print(str(entry[MONGO_DB_CONSTANTS.ID_FIELD]))
         new_row = [str(entry[MONGO_DB_CONSTANTS.ID_FIELD]), entry[MONGO_DB_CONSTANTS.TONE_FIELD]]
 
-        bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(words_idf_data, entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
+        bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(entry[MONGO_DB_CONSTANTS.TEXT_FIELD], words_idf_data)
         bow_writer.writerow(new_row + bow_feature_vector)
         tf_idf_writer.writerow(new_row + tf_idf_feature_vector)
 
@@ -85,10 +85,7 @@ def generate_multi_representation_split_csv(train_ids, test_ids, split_output_fo
     """
 
     train_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : train_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    words_idf_data = NlpFeaturesUtils.get_word_idf_data(train_data)
-    words_idf_json_file = open(os.path.join(split_output_folder, 'tf-idf-data.json'), 'w+')
-    json.dump(words_idf_data, words_idf_json_file)
-    words_idf_json_file.close()
+    words_idf_data = NlpFeaturesUtils.get_word_idf_data(train_data, split_output_folder)
 
     train_voc_set = set(words_idf_data.keys())
 

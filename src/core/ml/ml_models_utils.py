@@ -84,21 +84,13 @@ class MlModelsUtils :
         feature_vector_format = kwargs['feature_vector_format']
 
         if feature_vector_format == 'bow' or feature_vector_format == FEATURE_FORMAT_CONSTANTS.TF_IDF :
-            if not 'tf-idf-data-path'in kwargs : 
-                print('Error')
-                return
-            tf_idf_data = json.load(kwargs['tf-idf-data-path'])
-            bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(tf_idf_data, input_text)
+            
+            bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(input_text, None, kwargs['tf-idf-data-path'])
 
             if feature_vector_format == FEATURE_FORMAT_CONSTANTS.BOW:
                 prediction = model.predict(bow_feature_vector)
                 return prediction
-            return model.predict(tf_idf_feature_vector)
-
-        if not 'w2v_model_path' in kwargs : 
-            print('Error')
-            return 
-        
+            return model.predict(tf_idf_feature_vector)    
         
         max_dims, sum_dims, mean_dims = NlpFeaturesUtils.generate_word2vec_feature_vector(kwargs['w2v_model_path'], input_text)
         if feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_MAX:
