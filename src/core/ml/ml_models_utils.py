@@ -2,7 +2,7 @@ from src.core.constants import MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, TON
 from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 import pandas as pd
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, accuracy_score
 import joblib
 import os
 import csv
@@ -12,7 +12,7 @@ from sklearn.neural_network import MLPClassifier
 class MlModelsUtils : 
     
     @staticmethod
-    def execute_train_test(train_path, test_path, model, save_folder, model_name) :
+    def execute_train_test(train_path, test_path, model, save_folder) :
         """
         Execute training and testing of a machine learning model and save the model, it's predictions for the test set and the train and test classification reports.
 
@@ -21,7 +21,9 @@ class MlModelsUtils :
             test_path (str): Path to the testing dataset.
             model: The machine learning model to train and test.
             save_folder (str): Folder path to save the trained model and reports.
-            model_name (str): Name of the model for saving purposes.
+        
+        Returns:
+        - test_accuracy (float): The accuracy of the model on the test set.
         """
         train_df = pd.read_csv(train_path)
         test_df = pd.read_csv(test_path)
@@ -36,7 +38,7 @@ class MlModelsUtils :
         y_test = encoder.transform(y_test)
 
         model.fit(X_train, y_train)
-        joblib.dump(model, os.path.join(save_folder, model_name + '.pkl'))
+        joblib.dump(model, os.path.join(save_folder, str(model) + '.pkl'))
 
         train_predictions = model.predict(X_train)
         train_classification_report = classification_report(train_predictions, y_train)
@@ -59,6 +61,9 @@ class MlModelsUtils :
                 writer.writerow([test_df.iloc[pred_idx][MONGO_DB_CONSTANTS.ID_FIELD],y_test[pred_idx], prediction])
 
         predictions_file.close()
+
+        test_accuracy = accuracy_score(test_preds, y_test)
+        return test_accuracy
 
     @staticmethod
     def use_trained_model_to_preidct_tone(model_path, input_text, **kwargs) :

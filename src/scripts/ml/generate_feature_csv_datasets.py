@@ -101,6 +101,9 @@ if __name__ == '__main__' :
     Retrieves environment variables, connects to MongoDB, loads Word2Vec model, and generates split datasets.
     Generates CSV files containing the split datasets with multiple representations including Bag-of-Words (BoW),
     TF-IDF, and 3 Word2Vec representations (max,mean, sum)
+
+     Parameters:
+    - output_folder: The folder where the trained datasets will be saved.
     """
 
     # Define output folder for storing datasets

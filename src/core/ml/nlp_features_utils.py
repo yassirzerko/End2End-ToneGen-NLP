@@ -72,14 +72,14 @@ class NlpFeaturesUtils :
         return words_idf
     
     @staticmethod
-    def generate_bow_tf_idf_feature_vector(text, idf_data = None, idf_data_file = None) :
+    def generate_bow_tf_idf_feature_vector(text, idf_data = None, idf_data_file_path = None) :
         """
         Generates Bag-of-Words (BoW) and TF-IDF feature vectors for the given text.
 
         Parameters:
         - idf_data: A dictionary containing inverse document frequency (IDF) scores for words in the vocabulary. 
                     Default is None.
-        - idf_data_file: Optional. The path to a JSON file containing IDF data. Default is None.
+        - idf_data_file_path: Optional. The path to a JSON file containing IDF data. Default is None.
 
         Returns:
         - bow_feature_vector: Bag-of-Words (BoW) feature vector for the text.
@@ -90,10 +90,10 @@ class NlpFeaturesUtils :
         """
 
         if idf_data == None  : 
-            if idf_data_file == None :
+            if idf_data_file_path == None :
                 raise Exception('Missing idf data, either provide a loaded idf dict or a json to an idf dict.')
 
-            idf_data = json.load(idf_data_file) 
+            idf_data = json.load(idf_data_file_path) 
 
         train_voc_set = set(idf_data.keys())
         text_words_count, n_terms = NlpFeaturesUtils.get_words_count_data(text, train_voc_set)
