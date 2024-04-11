@@ -1,17 +1,18 @@
-from src.core.constants import MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS
+from src.core.constants import MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, TONES_CONSTANTS
 from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 import pandas as pd
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
 from sklearn.metrics import classification_report
 import joblib
 import os
-import json
 import csv
+import torch.nn as nn
+from sklearn.neural_network import MLPClassifier
 
 class MlModelsUtils : 
     
     @staticmethod
-    def execute_train_test(train_path, test_path, model, save_folder, model_name, one_hot_encode = False) :
+    def execute_train_test(train_path, test_path, model, save_folder, model_name) :
         """
         Execute training and testing of a machine learning model and save the model, it's predictions for the test set and the train and test classification reports.
 
@@ -21,7 +22,6 @@ class MlModelsUtils :
             model: The machine learning model to train and test.
             save_folder (str): Folder path to save the trained model and reports.
             model_name (str): Name of the model for saving purposes.
-            one_hot_encode (bool, optional): Whether to perform one-hot encoding. Default is False.
         """
         train_df = pd.read_csv(train_path)
         test_df = pd.read_csv(test_path)
@@ -29,9 +29,10 @@ class MlModelsUtils :
         X_train, y_train = train_df.drop(columns=[MONGO_DB_CONSTANTS.TONE_FIELD,  MONGO_DB_CONSTANTS.ID_FIELD]), train_df[MONGO_DB_CONSTANTS.TONE_FIELD]
         X_test, y_test = test_df.drop(columns=[MONGO_DB_CONSTANTS.TONE_FIELD,  MONGO_DB_CONSTANTS.ID_FIELD]), test_df[MONGO_DB_CONSTANTS.TONE_FIELD]
 
-        encoder = LabelBinarizer() if one_hot_encode else LabelEncoder()
+        encoder = LabelBinarizer() if isinstance(model, MLPClassifier) or isinstance(model, nn.Module) else LabelEncoder()
         
-        y_train = encoder.fit_transform(y_train)
+        encoder.fit(TONES_CONSTANTS.TONES)
+        y_train = encoder.transform(y_train)
         y_test = encoder.transform(y_test)
 
         model.fit(X_train, y_train)
@@ -59,9 +60,6 @@ class MlModelsUtils :
 
         predictions_file.close()
 
-
-    
-    
     @staticmethod
     def use_trained_model_to_preidct_tone(model_path, input_text, **kwargs) :
         """
@@ -72,32 +70,45 @@ class MlModelsUtils :
         - input_text: The input text for which to predict the tone.
         - **kwargs: Additional keyword arguments.
             - feature_vector_format: The format of the feature vectors ('bow', 'tf-idf', 'w2v_max', 'w2v_sum', 'w2v_mean').
-            - tf-idf-data-path: The path to the TF-IDF data file (required for 'bow' or 'tf-idf' feature formats).
+            - idf_data_path: The path to the IDF data file (required for 'bow' or 'tf-idf' feature formats).
             - w2v_model_path: The path to the Word2Vec model file (required for Word2Vec feature formats).
 
         Returns:
         - prediction: The predicted tone of the input text.
         """
-
-        model = joblib.load(model_path)
-        
         feature_vector_format = kwargs['feature_vector_format']
 
-        if feature_vector_format == 'bow' or feature_vector_format == FEATURE_FORMAT_CONSTANTS.TF_IDF :
-            
-            bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(input_text, None, kwargs['tf-idf-data-path'])
+        model = joblib.load(model_path)
 
-            if feature_vector_format == FEATURE_FORMAT_CONSTANTS.BOW:
-                prediction = model.predict(bow_feature_vector)
-                return prediction
-            return model.predict(tf_idf_feature_vector)    
+        encoder = LabelBinarizer() if isinstance(model, MLPClassifier) or isinstance(model, nn.Module) else LabelEncoder()
         
-        max_dims, sum_dims, mean_dims = NlpFeaturesUtils.generate_word2vec_feature_vector(kwargs['w2v_model_path'], input_text)
-        if feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_MAX:
-            return model.predict(max_dims)
-        if feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_SUM :
-            return sum_dims
-        return mean_dims
+        encoder.fit(TONES_CONSTANTS.TONES)
+
+        prediction = None
+
+        if feature_vector_format == FEATURE_FORMAT_CONSTANTS.BOW or feature_vector_format == FEATURE_FORMAT_CONSTANTS.TF_IDF :
+            
+            bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(input_text, None, kwargs['idf_data_path'])
+
+            if feature_vector_format == FEATURE_FORMAT_CONSTANTS.BOW : 
+                prediction = model.predict(bow_feature_vector)
+            else : 
+                prediction = model.predict(tf_idf_feature_vector)
+        
+        else :
+
+            max_dims, sum_dims, mean_dims = NlpFeaturesUtils.generate_word2vec_feature_vector(kwargs['w2v_model_path'], input_text)
+        
+            if feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_MAX:
+                prediction =  model.predict(max_dims)
+            
+            elif feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_SUM :
+                prediction = model.predict(sum_dims)
+            
+            else : 
+                prediction = model.prediction(mean_dims)
+        
+        return encoder.inverse_transform(prediction)
 
 
 

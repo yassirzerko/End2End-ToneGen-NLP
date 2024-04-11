@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, Gradien
 from sklearn.neural_network import MLPClassifier
 
 
-def train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format, one_hot_encode) :
+def train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format) :
     """
     Train, test, and save a machine learning model for each split of a dataset.
 
@@ -32,7 +32,7 @@ def train_test_save_model(n_split, dataset_folder, output_folder, model, feature
         train_path = os.path.join(data_split_path, feature_vector_format + '_train.csv')
         test_path = os.path.join(data_split_path, feature_vector_format + '_test.csv')
         
-        MlModelsUtils.execute_train_test(train_path, test_path, model, save_folder_path, str(model), one_hot_encode)
+        MlModelsUtils.execute_train_test(train_path, test_path, model, save_folder_path, str(model))
 
 if __name__ == "__main__" :
     '''
@@ -52,7 +52,7 @@ if __name__ == "__main__" :
     for params in rf_params : 
         for feature_vector_format in [FEATURE_FORMAT_CONSTANTS.BOW, FEATURE_FORMAT_CONSTANTS.TF_IDF, FEATURE_FORMAT_CONSTANTS.W2V_MAX, FEATURE_FORMAT_CONSTANTS.W2V_SUM, FEATURE_FORMAT_CONSTANTS.W2V_MEAN] :
             rf = RandomForestClassifier(**params)
-            train_test_save_model(n_split, dataset_folder, output_folder, rf, feature_vector_format, False)
+            train_test_save_model(n_split, dataset_folder, output_folder, rf, feature_vector_format)
 
 
     ada_params = [{'n_estimators':200, 'learning_rate':1.0}, {'n_estimators':100, 'learning_rate':1.0}, {'n_estimators':50, 'learning_rate':1.0}, {'n_estimators':25, 'learning_rate':1.0},
@@ -62,7 +62,7 @@ if __name__ == "__main__" :
     for params in ada_params : 
         for feature_vector_format in [FEATURE_FORMAT_CONSTANTS.BOW, FEATURE_FORMAT_CONSTANTS.TF_IDF, FEATURE_FORMAT_CONSTANTS.W2V_MAX, FEATURE_FORMAT_CONSTANTS.W2V_SUM, FEATURE_FORMAT_CONSTANTS.W2V_MEAN] :
             ada = AdaBoostClassifier(**params)
-            train_test_save_model(n_split, dataset_folder, output_folder, ada, feature_vector_format, False)
+            train_test_save_model(n_split, dataset_folder, output_folder, ada, feature_vector_format)
     
 
     
@@ -74,18 +74,18 @@ if __name__ == "__main__" :
     for params in gb_params : 
         for feature_vector_format in [FEATURE_FORMAT_CONSTANTS.BOW, FEATURE_FORMAT_CONSTANTS.TF_IDF, FEATURE_FORMAT_CONSTANTS.W2V_MAX, FEATURE_FORMAT_CONSTANTS.W2V_SUM, FEATURE_FORMAT_CONSTANTS.W2V_MEAN] :
             gb = GradientBoostingClassifier(**params)
-            train_test_save_model(n_split, dataset_folder, output_folder, gb, feature_vector_format, False)
+            train_test_save_model(n_split, dataset_folder, output_folder, gb, feature_vector_format)
 
     
     for feature_vector_format in [FEATURE_FORMAT_CONSTANTS.BOW, FEATURE_FORMAT_CONSTANTS.TF_IDF, FEATURE_FORMAT_CONSTANTS.W2V_MAX, FEATURE_FORMAT_CONSTANTS.W2V_SUM, FEATURE_FORMAT_CONSTANTS.W2V_MEAN] :
         hgb = HistGradientBoostingClassifier()
-        train_test_save_model(n_split, dataset_folder, output_folder, hgb, feature_vector_format, False)
+        train_test_save_model(n_split, dataset_folder, output_folder, hgb, feature_vector_format)
 
     mlp_params = [{'hidden_layer_size' : (100,100)}, {'hidden_layer_size' : (100,100, 100)}, {'hidden_layer_size' : (100,5,5)}, {'hidden_layer_size' : (25,25,25,25,25)} ]
     for params in mlp_params :
         for feature_vector_format in [FEATURE_FORMAT_CONSTANTS.BOW, FEATURE_FORMAT_CONSTANTS.TF_IDF, FEATURE_FORMAT_CONSTANTS.W2V_MAX, FEATURE_FORMAT_CONSTANTS.W2V_SUM, FEATURE_FORMAT_CONSTANTS.W2V_MEAN] :
             mlp = MLPClassifier(**params)
-            train_test_save_model(n_split, dataset_folder, output_folder, mlp, feature_vector_format, True)
+            train_test_save_model(n_split, dataset_folder, output_folder, mlp, feature_vector_format)
     
 
 
