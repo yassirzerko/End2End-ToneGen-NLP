@@ -73,7 +73,7 @@ def hyper_params_train_test_save(n_split, dataset_folder, output_folder, model_c
             for split_idx in range(len(split_test_accuracies)) :
                 accuracy = split_test_accuracies[split_idx]
                 model_path = os.path.join(model_folder_path, f'split{split_idx}.pkl')
-                training_data.append([re.sub(r'\([^()]*\)', '', str(model)), feature_vector_format, accuracy, model_path, split_idx])
+                training_data.append([str(model).split('(')[0], feature_vector_format, accuracy, model_path, split_idx])
 
     return training_data
 

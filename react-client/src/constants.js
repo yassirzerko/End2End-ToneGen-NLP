@@ -40,4 +40,4 @@ const models_data = [{id : 'id1', model_name: 'rf', bow_acc : 0.90,tf_idf_acc : 
 
 export const Mock_data = {models : models_data , feature_format : ['bow', 'tf_idf', 'w2v_max', 'w2v_sum', 'w2v_mean']} 
 
-export const API = 'api_test'
+export const server_URI = 'http://127.0.0.1:5000/'

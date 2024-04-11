@@ -1,6 +1,6 @@
 import re
 import math 
-from gensim.models import Word2Vec
+from gensim.models import KeyedVectors
 import json
 import os
 
@@ -93,8 +93,10 @@ class NlpFeaturesUtils :
             if idf_data_file_path == None :
                 raise Exception('Missing idf data, either provide a loaded idf dict or a json to an idf dict.')
 
-            idf_data = json.load(idf_data_file_path) 
-
+            file = open(idf_data_file_path, 'r')
+            idf_data = json.load(file) 
+            file.close()
+            
         train_voc_set = set(idf_data.keys())
         text_words_count, n_terms = NlpFeaturesUtils.get_words_count_data(text, train_voc_set)
 
@@ -119,7 +121,7 @@ class NlpFeaturesUtils :
         - sum_dims: Feature vector representing the sum of values for each dimension across all word embeddings.
         - mean_dims: Feature vector representing the mean value for each dimension across all word embeddings.
         """
-        word2vec_converter = Word2Vec.load(word2vec_converter_path, mmap='r')
+        word2vec_converter = KeyedVectors.load(word2vec_converter_path, mmap='r')
         words = re.split(r'\W+', text)
 
         max_dims = [- math.inf ] * 300

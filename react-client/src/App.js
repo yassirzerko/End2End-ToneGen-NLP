@@ -7,10 +7,9 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import LinearProgress from '@mui/material/LinearProgress';
 import {ReactTyped} from "react-typed";
-import './constants.js';
-import './utils.js'
-import { modelDescriptions } from './constants.js';
-import { modalComponent } from './components.js';
+import {featureRepresentations, modelDescriptions, server_URI, appExplanation} from './constants.js';
+import {get_accuracy_sentence, buildRequest} from './utils.js'
+import { modalComponent , appBarComponent, errorForm, selectComponenent} from './components.js';
 
 function App() {
   const [inputText,setInputText] = useState('')
@@ -21,11 +20,11 @@ function App() {
   const [error, setError] = useState('')
   const [openModal, setOpenModal] = useState(false)
   const [modalText, setModalText] = useState(['',''])
-
+  
   const fetchApiData = async () => {
     setIsLoading(true)
     try {
-      const response = await fetch(API)
+      const response = await fetch(server_URI)
       if (!response.ok) {
         setError(response) 
       }
@@ -48,13 +47,14 @@ function App() {
     setIsLoading(true)
     try {
       // also use choosen model and choosen encoding
-      const response = await fetch(API + inputText)
+      const response = await fetch(buildRequest(choosenModel, featureFormat, inputText))
       if (!response.ok) {
         setError(response)
       }
       else{
         const data = await response.json()
-        setModalText(['Model prediction', [['','Your text was labeled as having a ' + 0 + ' tone']]])
+        setModalText(['Model prediction', [['','Your text was labeled as having a ' + data['prediction']+ ' tone']]])
+        setOpenModal(true)
       }
        
     }
@@ -83,7 +83,9 @@ const handleFormChange = (event) => {
 
 
   const disabled = isLoading || error !== ''
-  const modelsNames = modelsData.map(model => model.model_name)
+  const modelsNames = modelDescriptions.slice(1).map(model => model[0])
+  const featureFormatNames = featureRepresentations.slice(1).map(feature => feature[0])
+  const submit_disbaled =  inputText.split(/\s+/).length < 5
   
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -110,7 +112,7 @@ const handleFormChange = (event) => {
             setModalText(['Models', modelDescriptions])
             setOpenModal(true)
           })}
-          {selectComponenent('Choose a feature representation', featureFormat, featuresData, handleFeatureChange, disabled, 'Learn more',() => {
+          {selectComponenent('Choose a feature representation', featureFormat, featureFormatNames, handleFeatureChange, disabled, 'Learn more',() => {
             setModalText(['Feature Representation Techniques', featureRepresentations])
             setOpenModal(true)
           })}
@@ -127,13 +129,13 @@ const handleFormChange = (event) => {
                 <TextField
                   disabled={disabled}
                   onChange={handleFormChange}
-                  label="Input the text for which you'd like to predict the tone"
+                  label="Input the text for which you'd like to predict the tone. Enter at least 5 words."
                   fullWidth
                   multiline
                   variant="outlined"
                   rows={2}
                 />
-                <Button size='large' onClick={submitText} disabled={disabled} variant="contained" sx={{ marginTop: 5, marginLeft:'40%'}}>
+                <Button size='large' onClick={submitText} disabled={disabled || submit_disbaled} variant="contained" sx={{ marginTop: 5, marginLeft:'40%'}}>
                   Predict text tone
                 </Button>
           

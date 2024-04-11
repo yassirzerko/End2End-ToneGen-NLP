@@ -53,7 +53,7 @@ if __name__ == '__main__' :
                 predictions_file_path = os.path.join(split_model_folder_path, 'predictions.csv')
                 model_path = [os.path.join(split_model_folder_path,file) for file in os.listdir(split_model_folder_path) if file.endswith('.pkl')][0]
                 accuracy = get_model_global_accuracy(predictions_file_path)
-                model_name = re.sub(r'\([^()]*\)', '', model_name)
+                model_name = model_name.split('(')[0]
                 writer.writerow([model_name, feature_format, accuracy, model_path, split_idx])
     
     output_file.close()

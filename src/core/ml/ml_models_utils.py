@@ -8,6 +8,7 @@ import os
 import csv
 import torch.nn as nn
 from sklearn.neural_network import MLPClassifier
+import numpy as np
 
 class MlModelsUtils : 
     
@@ -89,31 +90,38 @@ class MlModelsUtils :
         
         encoder.fit(TONES_CONSTANTS.TONES)
 
-        prediction = None
+        feature_vector = None
 
         if feature_vector_format == FEATURE_FORMAT_CONSTANTS.BOW or feature_vector_format == FEATURE_FORMAT_CONSTANTS.TF_IDF :
             
             bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(input_text, None, kwargs['idf_data_path'])
 
             if feature_vector_format == FEATURE_FORMAT_CONSTANTS.BOW : 
-                prediction = model.predict(bow_feature_vector)
+                feature_vector = bow_feature_vector
             else : 
-                prediction = model.predict(tf_idf_feature_vector)
+                feature_vector = tf_idf_feature_vector
         
         else :
 
             max_dims, sum_dims, mean_dims = NlpFeaturesUtils.generate_word2vec_feature_vector(kwargs['w2v_model_path'], input_text)
         
             if feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_MAX:
-                prediction =  model.predict(max_dims)
+                feature_vector =  max_dims
             
             elif feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_SUM :
-                prediction = model.predict(sum_dims)
+                feature_vector = sum_dims
             
             else : 
-                prediction = model.prediction(mean_dims)
+                feature_vector = mean_dims
         
-        return encoder.inverse_transform(prediction)
+        print(input_text)
+        df = pd.DataFrame(np.array(feature_vector).reshape(1,-1), columns=[idx for idx in range(len(feature_vector))])
+        prediction = model.predict(df)
+        print(str(model))
+        print(prediction)
+        predicted_tone = encoder.inverse_transform(prediction)
+        print(predicted_tone)
+        return predicted_tone[0]
 
 
 
