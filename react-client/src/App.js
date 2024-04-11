@@ -12,10 +12,6 @@ import './utils.js'
 import { modelDescriptions } from './constants.js';
 import { modalComponent } from './components.js';
 
-
-
-
-
 function App() {
   const [inputText,setInputText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -51,7 +47,7 @@ function App() {
     // first check if the text is correct
     setIsLoading(true)
     try {
-      
+      // also use choosen model and choosen encoding
       const response = await fetch(API + inputText)
       if (!response.ok) {
         setError(response)
