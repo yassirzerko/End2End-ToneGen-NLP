@@ -66,7 +66,7 @@ def hyper_params_train_test_save(n_split, dataset_folder, output_folder, model_c
     """
     training_data = []
     for params in params_list :
-        for feature_vector_format in [FEATURE_FORMAT_CONSTANTS.BOW, FEATURE_FORMAT_CONSTANTS.TF_IDF, FEATURE_FORMAT_CONSTANTS.W2V_MAX, FEATURE_FORMAT_CONSTANTS.W2V_SUM, FEATURE_FORMAT_CONSTANTS.W2V_MEAN] :
+        for feature_vector_format in FEATURE_FORMAT_CONSTANTS.FEATURES_NAMES:
             model = model_constructor(**params)
             model_folder_path, split_test_accuracies = train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format)
             

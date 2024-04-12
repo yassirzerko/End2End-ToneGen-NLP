@@ -2,14 +2,12 @@ import flask
 from flask import request
 from flask_cors import CORS
 from src.core.constants import FEATURE_FORMAT_CONSTANTS
-from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 from src.core.ml.ml_models_utils import MlModelsUtils
 import os 
 import csv
 
 app = flask.Flask(__name__)
 CORS(app)
-w2v_converter_path = 'glove-wiki-300-w2v.wordvectors'
 
 def get_idf_file_path(split_idx) :
     idf_file_path = os.path.join('datasets', f'split{split_idx}', 'tf-idf-data.json')
@@ -57,7 +55,7 @@ def get_models_data() :
     formatted_response = []
     for model_name in models_data :
         model_dict_data = {'model_name' : model_name}
-        for feature_format in [FEATURE_FORMAT_CONSTANTS.BOW, FEATURE_FORMAT_CONSTANTS.TF_IDF, FEATURE_FORMAT_CONSTANTS.W2V_MAX, FEATURE_FORMAT_CONSTANTS.W2V_MEAN, FEATURE_FORMAT_CONSTANTS.W2V_SUM] :
+        for feature_format in FEATURE_FORMAT_CONSTANTS.FEATURES_NAMES :
             model_dict_data[feature_format] = round(float(models_data[model_name][feature_format]['accuracy']),2)
         
         formatted_response.append(model_dict_data)
@@ -77,6 +75,6 @@ def make_prediction() :
     input_text = request.args['input_text']
     models_data = get_best_models_data()
     idf_file_path = get_idf_file_path(models_data[model_name][feature_vec]['split_idx'])
-    prediction = MlModelsUtils.use_trained_model_to_preidct_tone(models_data[model_name][feature_vec]['path'], input_text, feature_vector_format = feature_vec, w2v_model_path = w2v_converter_path, idf_data_path = idf_file_path)
+    prediction = MlModelsUtils.use_trained_model_to_preidct_tone(models_data[model_name][feature_vec]['path'], input_text, feature_vec, idf_data_path = idf_file_path)
     return {'prediction' : prediction}
     

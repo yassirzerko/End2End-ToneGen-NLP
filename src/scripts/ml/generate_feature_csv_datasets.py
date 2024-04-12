@@ -1,110 +1,100 @@
 import csv
-import json
 import os
 from src.core.ml.ml_dataset_utils import MlDatasetUtils
 from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 import sys
 from src.core.read_env import get_env_variables
-from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS
+from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, W2V_MODEL_NAMES
 from src.core.text_generation.mongo_client import Mongo_Client
 import traceback
 
+import gensim.downloader as gensim_downloader
+import re
 
-def get_csv_columns_name(train_voc_set) : 
-    columns_name = [MONGO_DB_CONSTANTS.ID_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD] + [idx for idx, _ in enumerate(list(train_voc_set))]
-    return columns_name
-
-def get_columns_name_word2_vec() :
-    columns_name = [MONGO_DB_CONSTANTS.ID_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD] + [idx for idx in range(300)]
-    return columns_name
-
-def create_multi_representation_datasets_csv(data, train_voc_set, words_idf_data, w2v_converter_path, output_folder, file_name) : 
+def create_multi_representation_datasets_csv(data, vocabulary, words_idf_data, output_folder, file_name) : 
     """
-    Generates split datasets for Bag-of-Words (BoW), TF-IDF, and 3 Word2Vec representations (max, mean, sum).
+    Generates split datasets for Bag-of-Words (BoW), TF-IDF, and 3 Word2Vec text representations (max, mean, sum) with 5 different Word2Vec models.
 
     Parameters:
     - data: List of data entries.
-    - train_voc_set: Set of vocabulary words used for training.
+    - vocabulary: List of vocabulary words used for training.
     - words_idf_data: Dictionary containing IDF values for words.
-    - w2v_converter_path: Word2Vec converter object path.
     - output_folder: Path to the output folder for storing the datasets.
     - file_name: Name of the output files (train or test).
 
     """
-
     # Open files for writing
-    bow_file  = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.BOW}_{file_name}.csv'), 'w+')
-    tf_idf_file = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.TF_IDF}_{file_name}.csv'), 'w+')
-    w2v_max_file = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.W2V_MAX}_{file_name}.csv'), 'w+')
-    w2v_sum_file = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.W2V_SUM}_{file_name}.csv'), 'w+')
-    w2v_mean_file = open(os.path.join(output_folder, f'{FEATURE_FORMAT_CONSTANTS.W2V_MEAN}_{file_name}.csv'), 'w+')
-
-    # Create CSV writers
-    bow_writer =  csv.writer(bow_file)
-    tf_idf_writer = csv.writer(tf_idf_file)
-    w2v_max_writer = csv.writer(w2v_max_file)
-    w2v_sum_writer = csv.writer(w2v_sum_file)
-    w2v_mean_writer = csv.writer(w2v_mean_file)
+    files = [open(os.path.join(output_folder, f'{feature_name}_{file_name}.csv'), 'w+', newline='') for feature_name in FEATURE_FORMAT_CONSTANTS.FEATURES_NAMES]
+    writers = [csv.writer(file) for file in files]
     
     # Write column headers
-    bow_writer.writerow(get_csv_columns_name(train_voc_set))
-    tf_idf_writer.writerow(get_csv_columns_name(train_voc_set))
-    w2v_max_writer.writerow(get_columns_name_word2_vec())
-    w2v_sum_writer.writerow(get_columns_name_word2_vec())
-    w2v_mean_writer.writerow(get_columns_name_word2_vec())
+    columns_name = [MONGO_DB_CONSTANTS.ID_FIELD, MONGO_DB_CONSTANTS.TONE_FIELD] 
+    for writer_idx, writer in enumerate(writers) :
+        corresponding_feature_name = FEATURE_FORMAT_CONSTANTS.FEATURES_NAMES[writer_idx] 
+        if corresponding_feature_name == FEATURE_FORMAT_CONSTANTS.BOW or corresponding_feature_name == FEATURE_FORMAT_CONSTANTS.TF_IDF :
+            writer.writerow(columns_name + [idx for idx in range(len(vocabulary))])
+            continue
+        
+        n_w2v_dim = int(re.search(r'\d+', corresponding_feature_name[3:]).group())
+        writer.writerow(columns_name + [idx for idx in range(n_w2v_dim)])
+
 
     for entry in data :
-        print(str(entry[MONGO_DB_CONSTANTS.ID_FIELD]))
         new_row = [str(entry[MONGO_DB_CONSTANTS.ID_FIELD]), entry[MONGO_DB_CONSTANTS.TONE_FIELD]]
+        bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vectors(entry[MONGO_DB_CONSTANTS.TEXT_FIELD], words_idf_data, vocabulary)
 
-        bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(entry[MONGO_DB_CONSTANTS.TEXT_FIELD], words_idf_data)
-        bow_writer.writerow(new_row + bow_feature_vector)
-        tf_idf_writer.writerow(new_row + tf_idf_feature_vector)
+        writers[0].writerow(new_row + bow_feature_vector)
+        writers[1].writerow(new_row + tf_idf_feature_vector)
+        w2v_features_by_models = NlpFeaturesUtils.generate_word2vec_feature_vectors(entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
 
-        max, sum, mean = NlpFeaturesUtils.generate_word2vec_feature_vector(w2v_converter_path, entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
-        w2v_max_writer.writerow(new_row + max)
-        w2v_sum_writer.writerow(new_row + sum)
-        w2v_mean_writer.writerow(new_row + mean)
+        writer_idx = 2
+        for max,sum, mean in w2v_features_by_models : 
+                writers[writer_idx].writerow(new_row + max)
+                writers[writer_idx + 1].writerow(new_row + sum)
+                writers[writer_idx + 2].writerow(new_row + mean)
+                writer_idx += 3
      
     # Close files
-    bow_file.close()
-    tf_idf_file.close()
-    w2v_max_file.close()
-    w2v_sum_file.close()
-    w2v_mean_file.close()
+    [file.close() for file in files]
 
-def generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder, w2v_converter_path) :
+def generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder) :
     """
-    Generates split CSV files with multiple representations (Bag-of-Words (BoW), TF-IDF, and 3 Word2Vec representations (max, mean, sum)) for training and testing datasets.
+    Generates split CSV files with multiple representations (Bag-of-Words (BoW), TF-IDF, and 3 Word2Vec text representations (max, mean, sum) with 5 different Word2Vec models) for training and testing datasets.
 
     Parameters:
     - train_ids: List of IDs for training data.
     - test_ids: List of IDs for testing data.
     - split_output_folder: Path to the output folder for storing the split CSV files.
-    - w2v_converter_path: Word2Vec converter object path.
     """
 
     train_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : train_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    words_idf_data = NlpFeaturesUtils.get_word_idf_data(train_data, split_output_folder)
-
-    train_voc_set = set(words_idf_data.keys())
+    words_idf_data, vocabulary = NlpFeaturesUtils.get_words_idf_and_voc(train_data, split_output_folder)
 
     train_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : train_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    create_multi_representation_datasets_csv(train_data, train_voc_set, words_idf_data, w2v_converter_path, split_output_folder, 'train')
+    create_multi_representation_datasets_csv(train_data, vocabulary, words_idf_data, split_output_folder, 'train')
     test_data = mongo_client.get_collection_data({MONGO_DB_CONSTANTS.ID_FIELD : {'$in' : test_ids}}, {MONGO_DB_CONSTANTS.TEXT_FIELD : 1, MONGO_DB_CONSTANTS.TONE_FIELD : 1, MONGO_DB_CONSTANTS.ID_FIELD : 1})
-    create_multi_representation_datasets_csv(test_data, train_voc_set, words_idf_data, w2v_converter_path, split_output_folder, 'test')
+    create_multi_representation_datasets_csv(test_data, vocabulary, words_idf_data, split_output_folder, 'test')
 
-    
+# TODO HANDLE L'ORDRE DE SAUVEGARDE DU SET DE TF-IDF
 if __name__ == '__main__' :
     """
     Generate split datasets with multiple representations for machine learning tasks.
     Retrieves environment variables, connects to MongoDB, loads Word2Vec model, and generates split datasets.
     Generates CSV files containing the split datasets with multiple representations including Bag-of-Words (BoW),
-    TF-IDF, and 3 Word2Vec representations (max,mean, sum)
+    TF-IDF, and  3 Word2Vec text representations (max, mean, sum) with 5 different Word2Vec models.
+
+    It also download word2vec converters if they doesn't exist
 
      Parameters:
     - output_folder: The folder where the trained datasets will be saved.
     """
+
+    # Download w2vec convert    
+    for converter_name in W2V_MODEL_NAMES : 
+        if  not os.path.exists(converter_name) :
+            w2v_converter = gensim_downloader.load(converter_name)
+            w2v_converter.save(converter_name)
+
 
     # Define output folder for storing datasets
     output_folder = "datasets"
@@ -120,26 +110,21 @@ if __name__ == '__main__' :
         # Initialize MongoDB client
         mongo_client = Mongo_Client(env_variables[ENV_CONSTANTS.MONGO_URI_FIELD])
         mongo_client.connect_to_db(env_variables[ENV_CONSTANTS.MONGO_DB_NAME_FIELD], env_variables[ENV_CONSTANTS.DB_CLEAN_COLLECTION_FIELD])
-        
-       
-        # Load pre-trained Word2Vec model
-        w2v_convert_path = os.path.join('w2v-model', 'glove-wiki-300-w2v.wordvectors')
-
       
         # Get balanced k-fold splits
         splits = MlDatasetUtils.get_k_folds_balanced_splits_ids(mongo_client, k=3)
         
+        
         # Iterate over splits
         for split_idx, split in enumerate(splits):
             train_ids, test_ids = split[0], split[1]
-
         
             # Create output folder for the split
             split_output_folder = os.path.join(output_folder, f'split{split_idx}')
             os.mkdir(split_output_folder)
 
             # Generate split datasets with multiple representations
-            generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder, w2v_convert_path)
+            generate_multi_representation_split_csv(train_ids, test_ids, split_output_folder)
     
     except Exception as e:
         print('An error occurred:')

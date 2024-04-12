@@ -1,4 +1,4 @@
-from src.core.constants import MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, TONES_CONSTANTS
+from src.core.constants import MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, TONES_CONSTANTS, W2V_MODEL_NAMES
 from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 import pandas as pd
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
@@ -67,22 +67,21 @@ class MlModelsUtils :
         return test_accuracy
 
     @staticmethod
-    def use_trained_model_to_preidct_tone(model_path, input_text, **kwargs) :
+    def use_trained_model_to_preidct_tone(model_path, input_text, feature_vector_format, idf_data_path, vocabulary_data_path) :
         """
         Uses a trained machine learning model to predict the tone of the given input text.
 
         Parameters:
         - model_path: The path to the trained machine learning model file.
         - input_text: The input text for which to predict the tone.
-        - **kwargs: Additional keyword arguments.
-            - feature_vector_format: The format of the feature vectors ('bow', 'tf-idf', 'w2v_max', 'w2v_sum', 'w2v_mean').
-            - idf_data_path: The path to the IDF data file (required for 'bow' or 'tf-idf' feature formats).
-            - w2v_model_path: The path to the Word2Vec model file (required for Word2Vec feature formats).
+        - feature_vector_format: The format of the feature vectors.
+        - idf_data_path: The path to the IDF data file.
+        - vocabulary_data_path : The path to the vocablary data file.
 
         Returns:
         - prediction: The predicted tone of the input text.
         """
-        feature_vector_format = kwargs['feature_vector_format']
+    
 
         model = joblib.load(model_path)
 
@@ -92,9 +91,10 @@ class MlModelsUtils :
 
         feature_vector = None
 
+
         if feature_vector_format == FEATURE_FORMAT_CONSTANTS.BOW or feature_vector_format == FEATURE_FORMAT_CONSTANTS.TF_IDF :
             
-            bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vector(input_text, None, kwargs['idf_data_path'])
+            bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vectors(input_text, None, None, idf_data_path, vocabulary_data_path)
 
             if feature_vector_format == FEATURE_FORMAT_CONSTANTS.BOW : 
                 feature_vector = bow_feature_vector
@@ -102,25 +102,24 @@ class MlModelsUtils :
                 feature_vector = tf_idf_feature_vector
         
         else :
-
-            max_dims, sum_dims, mean_dims = NlpFeaturesUtils.generate_word2vec_feature_vector(kwargs['w2v_model_path'], input_text)
+            feature_vectors_by_model =  NlpFeaturesUtils.generate_word2vec_feature_vectors(input_text)
+            for (converted_idx, (max_dims, sum_dims, mean_dims)) in enumerate(feature_vectors_by_model): 
+                if W2V_MODEL_NAMES[converted_idx] in feature_vector_format :
+                   
+                    if 'max' in feature_vector_format:
+                        feature_vector =  max_dims
+                    
+                    elif 'sum' in feature_vector_format:
+                        feature_vector = sum_dims
+                    
+                    else : 
+                        feature_vector = mean_dims
+                    
+                    break
         
-            if feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_MAX:
-                feature_vector =  max_dims
-            
-            elif feature_vector_format == FEATURE_FORMAT_CONSTANTS.W2V_SUM :
-                feature_vector = sum_dims
-            
-            else : 
-                feature_vector = mean_dims
-        
-        print(input_text)
         df = pd.DataFrame(np.array(feature_vector).reshape(1,-1), columns=[idx for idx in range(len(feature_vector))])
         prediction = model.predict(df)
-        print(str(model))
-        print(prediction)
         predicted_tone = encoder.inverse_transform(prediction)
-        print(predicted_tone)
         return predicted_tone[0]
 
 

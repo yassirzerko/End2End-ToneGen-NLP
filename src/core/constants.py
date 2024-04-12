@@ -36,7 +36,7 @@ class SIZE_CONSTANTS :
     SMALL = "small"
     MEDIUM = "medium"
     LARGE = "large"
-    VERY_LARGE = "very_large"
+    VERY_LARGE = "very-large"
 
 class ENV_CONSTANTS : 
     ENV_FILE_NAME = ".env"
@@ -46,10 +46,19 @@ class ENV_CONSTANTS :
     DB_RAW_COLLECTION_FIELD = "MONGO_RAW_COLLECTION_NAME"
     DB_CLEAN_COLLECTION_FIELD = "MONGO_CLEAN_COLLECTION_NAME"
 
+W2V_MODEL_NAMES = ['glove-twitter-25', 'glove-twitter-50', 'glove-twitter-100', 'glove-twitter-200', 'glove-wiki-gigaword-300']
+
 class FEATURE_FORMAT_CONSTANTS:
     BOW = "bow"
     TF_IDF = "tf-idf"
     W2V_MAX = "w2v-max"
     W2V_SUM = "w2v-sum"
     W2V_MEAN = "w2v-mean"
+    W2V_FEATURES = []
+
+    for w2v_model_name in W2V_MODEL_NAMES :
+        for op_name in ['max', 'sum', 'mean'] :
+            W2V_FEATURES += [ f'w2v_{w2v_model_name}_{op_name}'  ]
+
+    FEATURES_NAMES = [BOW, TF_IDF]  + W2V_FEATURES
 

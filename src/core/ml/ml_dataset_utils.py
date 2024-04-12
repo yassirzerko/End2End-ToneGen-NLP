@@ -44,12 +44,14 @@ class MlDatasetUtils :
         The folds are balanced by label (Tone) and by text size.
         """
 
+        # TODO: using only 6000 entries shoudl use 8000
         folds_ids = [ [] for _ in range (k) ]
         for tone in TONES_CONSTANTS.TONES :
             for size in [SIZE_CONSTANTS.SMALL, SIZE_CONSTANTS.MEDIUM, SIZE_CONSTANTS.LARGE, SIZE_CONSTANTS.VERY_LARGE] :
                 data = list(db_client.get_collection_data({MONGO_DB_CONSTANTS.TONE_FIELD : tone, MONGO_DB_CONSTANTS.LABEL_SIZE_FIELD : size}, {MONGO_DB_CONSTANTS.ID_FIELD : 1}))
                 random.shuffle(data)
                 nb_entries_by_fold = int(len(data) / k)
+                #print(nb_entries_by_fold)
 
                 for n_fold in range (k) : 
                     start_range = n_fold*nb_entries_by_fold 
@@ -63,5 +65,6 @@ class MlDatasetUtils :
 
                     folds_ids[n_fold] += [entry[MONGO_DB_CONSTANTS.ID_FIELD] for entry in fold_data]
 
-            
+        
+        [print(len(fold)) for fold in folds_ids]    
         return folds_ids
