@@ -6,7 +6,7 @@ import os
 from src.core.constants import W2V_MODEL_NAMES, BERT_MODELS_NAMES
 from transformers import BertTokenizer, BertModel, RobertaTokenizer, RobertaModel
 import torch
-from transformers import BertConfig, RobertConfig
+from transformers import BertConfig, RobertaConfig
 
 class NlpFeaturesUtils : 
     @staticmethod

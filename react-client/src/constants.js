@@ -1,6 +1,6 @@
 export const appExplanation = `
 Welcome to our Tone Prediction Application! 
-Choose a trained model and feature representation technique from the dropdown menus, then input your text to predict its tone.
+Choose a trained model and text embedding technique from the dropdown menus, then input your text to predict its tone.
 Tones Available for Prediction:
 Formal,
 Casual,
@@ -16,12 +16,12 @@ Get started now and discover the tone of your text!
 `;
 
 export const featureRepresentations = [
-  ["General explanation", "Feature representation techniques transform text into a format that machine learning models can understand. In this project, five distinct methods of feature representation are employed to characterize texts."],
-  ["Bag of Visual Words (BoVW)", "Represent text by counting occurrences of visual word 'clusters' in a predefined vocabulary."],
+  ["General explanation", "Text embedding techniques transform text into dense vector representations that capture semantic meanings. A variety of 20 text embedding techniques offered."],
+  ["Bag of Words (BoW)", "Represent text by counting occurrences of words in a predefined vocabulary."],
   ["Term Frequency-Inverse Document Frequency (TF-IDF)", "Weigh each word by its frequency in the document and its rarity across documents."],
-  ["Word2Vec - Sum of Each Dimension", "Calculate the sum of word embeddings across each dimension in the Word2Vec space."],
-  ["Word2Vec - Mean of Each Dimension", "Compute the average of word embeddings across each dimension in the Word2Vec space."],
-  ["Word2Vec - Max of Each Dimension", "Determine the maximum value of word embeddings across each dimension in the Word2Vec space."]
+  ["Word2Vec - Each Dimension Pooling", "Calculate the max/average/sum word embeddings across each dimension in the Word2Vec space."],
+  ["BERT Models"," Transformer-based model that generates context-aware embeddings for texts."],
+  ["RoBERTa","Variant of the BERT model that employs more data. It provides enhanced performance compared to the original BERT model."]
 ];
 
 export const modelDescriptions = [

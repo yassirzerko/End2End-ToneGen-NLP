@@ -67,7 +67,7 @@ class MlModelsUtils :
         return test_accuracy
 
     @staticmethod
-    def use_trained_model_to_preidct_tone(model_path, input_text, feature_vector_format, idf_data_path, vocabulary_data_path) :
+    def use_trained_model_to_predict_tone(model_path, input_text, feature_vector_format, idf_data_path, vocabulary_data_path) :
         """
         Uses a trained machine learning model to predict the tone of the given input text.
 

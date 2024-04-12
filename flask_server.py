@@ -9,9 +9,11 @@ import csv
 app = flask.Flask(__name__)
 CORS(app)
 
-def get_idf_file_path(split_idx) :
+def get_idf_voc_path(split_idx) :
     idf_file_path = os.path.join('datasets', f'split{split_idx}', 'tf-idf-data.json')
-    return idf_file_path
+    voc_file_path = os.path.join('datasets', f'split{split_idx}', 'voc.json')
+    
+    return idf_file_path, voc_file_path
 
 def get_best_models_data() :
     """
@@ -52,13 +54,20 @@ def get_models_data() :
     """
     
     models_data = get_best_models_data()
-    formatted_response = []
+    formatted_response = {}
+    training_data = []
     for model_name in models_data :
         model_dict_data = {'model_name' : model_name}
         for feature_format in FEATURE_FORMAT_CONSTANTS.FEATURES_NAMES :
+            if feature_format not in  models_data[model_name] :
+                # for debug
+                # TODO : REMOVE
+                continue 
             model_dict_data[feature_format] = round(float(models_data[model_name][feature_format]['accuracy']),2)
         
-        formatted_response.append(model_dict_data)
+        training_data.append(model_dict_data)
+    
+    formatted_response = {'models_data' : training_data, 'feature_names' : FEATURE_FORMAT_CONSTANTS.FEATURES_NAMES}
         
     return formatted_response
 
@@ -74,7 +83,7 @@ def make_prediction() :
     feature_vec = request.args['feature_format']
     input_text = request.args['input_text']
     models_data = get_best_models_data()
-    idf_file_path = get_idf_file_path(models_data[model_name][feature_vec]['split_idx'])
-    prediction = MlModelsUtils.use_trained_model_to_preidct_tone(models_data[model_name][feature_vec]['path'], input_text, feature_vec, idf_data_path = idf_file_path)
+    idf_file_path, voc_file_path = get_idf_voc_path(models_data[model_name][feature_vec]['split_idx'])
+    prediction = MlModelsUtils.use_trained_model_to_predict_tone(models_data[model_name][feature_vec]['path'], input_text, feature_vec, idf_file_path, voc_file_path)
     return {'prediction' : prediction}
     

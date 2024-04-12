@@ -14,9 +14,10 @@ import { modalComponent , appBarComponent, errorForm, selectComponenent} from '.
 function App() {
   const [inputText,setInputText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [choosenModel, setChoosenModel] = useState(modelDescriptions[1][0])
-  const [featureFormat, setFeatureFormat] = useState(featureRepresentations[1][0])
+  const [choosenModel, setChoosenModel] = useState('')
+  const [featureFormat, setFeatureFormat] = useState('')
   const [modelsData, setModelsData] = useState([])
+  const [feature_names, setFeaturesNames] = useState([])
   const [error, setError] = useState('')
   const [openModal, setOpenModal] = useState(false)
   const [modalText, setModalText] = useState(['',''])
@@ -31,7 +32,11 @@ function App() {
       else
       {
         const data = await response.json()
-        setModelsData(data)
+
+        setModelsData(data['models_data'])
+        setFeaturesNames(data['feature_names'])
+        setFeatureFormat(data['feature_names'][0])
+        setChoosenModel(modelDescriptions[1][0])
       }
       
     }
@@ -84,7 +89,6 @@ const handleFormChange = (event) => {
 
   const disabled = isLoading || error !== ''
   const modelsNames = modelDescriptions.slice(1).map(model => model[0])
-  const featureFormatNames = featureRepresentations.slice(1).map(feature => feature[0])
   const submit_disbaled =  inputText.split(/\s+/).length < 5
   
   return (
@@ -112,8 +116,8 @@ const handleFormChange = (event) => {
             setModalText(['Models', modelDescriptions])
             setOpenModal(true)
           })}
-          {selectComponenent('Choose a feature representation', featureFormat, featureFormatNames, handleFeatureChange, disabled, 'Learn more',() => {
-            setModalText(['Feature Representation Techniques', featureRepresentations])
+          {selectComponenent('Choose a text embedding technique', featureFormat, feature_names, handleFeatureChange, disabled, 'Learn more',() => {
+            setModalText(['Text embedding techniques', featureRepresentations])
             setOpenModal(true)
           })}
           

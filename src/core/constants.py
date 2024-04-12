@@ -62,5 +62,5 @@ class FEATURE_FORMAT_CONSTANTS:
         for op_name in ['max', 'sum', 'mean'] :
             W2V_FEATURES += [ f'w2v_{w2v_model_name}_{op_name}'  ]
 
-    FEATURES_NAMES = [BOW, TF_IDF]  + W2V_FEATURES + "bert"
+    FEATURES_NAMES = [BOW, TF_IDF]  + W2V_FEATURES + BERT_MODELS_NAMES
 
