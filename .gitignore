@@ -28,3 +28,8 @@ yarn-error.log*
 models_training/
 datasets/
 
+glove-twitter-25 
+glove-twitter-50 
+glove-twitter-100
+glove-twitter-200 
+glove-wiki-gigaword-300
