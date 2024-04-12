@@ -37,7 +37,7 @@ The following 10 tones are considered for tone classification:
 
 **General Explanation**
 
-Feature representation techniques transform text into a format that machine learning models can understand. In this project, five distinct methods of feature representation are employed to characterize texts. Here are the used feature representation techniques in the project.
+Feature representation techniques transform text into a format that machine learning models can understand. In this project, five distinct methods of feature representation are employed to characterize texts. Here are the used feature representation techniques in the project : Bag-of-Words (BoW), TF-IDF, and 3 Word2Vec text representations (max, mean, sum) with 5 different Word2Vec models, for a total of **17 text representation techniques**ag-of-Words (BoW), TF-IDF, and 3 Word2Vec text representations (max, mean, sum) with 5 different Word2Vec models, for a total of **17 text representation techniques** .
 
 **Bag of Visual Words (BoVW)**
 
