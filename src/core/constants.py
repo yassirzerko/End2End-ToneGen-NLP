@@ -47,6 +47,7 @@ class ENV_CONSTANTS :
     DB_CLEAN_COLLECTION_FIELD = "MONGO_CLEAN_COLLECTION_NAME"
 
 W2V_MODEL_NAMES = ['glove-twitter-25', 'glove-twitter-50', 'glove-twitter-100', 'glove-twitter-200', 'glove-wiki-gigaword-300']
+BERT_MODELS_NAMES = ['bert-base-uncased','bert-large-uncased', 'roberta-base']
 
 class FEATURE_FORMAT_CONSTANTS:
     BOW = "bow"
@@ -54,11 +55,12 @@ class FEATURE_FORMAT_CONSTANTS:
     W2V_MAX = "w2v-max"
     W2V_SUM = "w2v-sum"
     W2V_MEAN = "w2v-mean"
+    BERT = "bert"
     W2V_FEATURES = []
 
     for w2v_model_name in W2V_MODEL_NAMES :
         for op_name in ['max', 'sum', 'mean'] :
             W2V_FEATURES += [ f'w2v_{w2v_model_name}_{op_name}'  ]
 
-    FEATURES_NAMES = [BOW, TF_IDF]  + W2V_FEATURES
+    FEATURES_NAMES = [BOW, TF_IDF]  + W2V_FEATURES + "bert"
 

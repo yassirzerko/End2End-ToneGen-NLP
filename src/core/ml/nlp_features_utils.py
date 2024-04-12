@@ -3,7 +3,10 @@ import math
 from gensim.models import KeyedVectors
 import json
 import os
-from src.core.constants import W2V_MODEL_NAMES
+from src.core.constants import W2V_MODEL_NAMES, BERT_MODELS_NAMES
+from transformers import BertTokenizer, BertModel, RobertaTokenizer, RobertaModel
+import torch
+from transformers import BertConfig, RobertConfig
 
 class NlpFeaturesUtils : 
     @staticmethod
@@ -120,13 +123,29 @@ class NlpFeaturesUtils :
         return bow_feature_vector, tf_idf_feature_vector
     
     @staticmethod
-    def generate_word2vec_feature_vectors(text) :
+    def load_word2vec_converters() :
         """
-        Generates feature vectors from Word2Vec embeddings for a given text.
-        Computes three types of feature vectors: maximum, sum, and mean, across multiple Word2Vec models.
+        Load Word2Vec models.
+
+        Returns:
+        - List of loaded Word2Vec models.
+        """
+        converters = []
+        for word2vec_converter_path  in W2V_MODEL_NAMES :
+            word2vec_converter = KeyedVectors.load(word2vec_converter_path, mmap='r')
+            converters.append(word2vec_converter)
+        
+        return converters
+    
+    @staticmethod
+    def generate_word2vec_feature_vectors(text, w2v_converters) :
+        """
+        Generate feature vectors from Word2Vec embeddings for a given text using multiple Word2Vec models.
+        Computes three types of feature vectors: maximum, sum, and mean for each dimension across all word embeddings from each model.
 
         Parameters:
-        - text: Text for which feature vectors are to be generated.
+        - text (str): Text for which feature vectors are to be generated.
+        - w2v_converters (list): List of loaded Word2Vec models.
 
         Returns:
         - List of tuples containing three types of feature vectors for each Word2Vec model:
@@ -136,9 +155,8 @@ class NlpFeaturesUtils :
         """
 
         converters_data = []
-        for word2vec_converter_path  in W2V_MODEL_NAMES :
+        for word2vec_converter  in enumerate(w2v_converters) :
 
-            word2vec_converter = KeyedVectors.load(word2vec_converter_path, mmap='r')
             words = re.split(r'\W+', text)
 
             max_dims = [- math.inf ] * 300
@@ -160,3 +178,53 @@ class NlpFeaturesUtils :
             converters_data.append([max_dims, sum_dims, mean_dims])
 
         return converters_data
+
+    @staticmethod
+    def generate_bert_feature_vectors(text) :
+        """
+        Generates BERT feature vectors for the input text using pre-trained BERT or RoBERTa models.
+
+        Parameters:
+            text (str): The input text for which feature vectors are to be generated.
+
+        Returns:
+            List of BERT feature vectors: A list containing feature vectors obtained from different pre-trained BERT or RoBERTa models.
+            Each feature vector represents the input text in the feature space learned by the corresponding model.
+        """
+
+        def get_bert_feature_vector(bert_model, tokenizer) :
+            model_input = tokenizer(text, padding = True, truncation = True, return_tensors = 'pt')
+            with torch.no_grad() :
+                model_output = bert_model(input = model_input)
+            
+            feature_vector = model_output.last_hidden_state[:,0:]
+            return feature_vector
+
+
+        bert_feature_vectors = []
+        for bert_model_name in BERT_MODELS_NAMES :
+            tokenizer, bert_model = None
+            if 'roberta' not in bert_model_name :
+                tokenizer = BertTokenizer.from_pretrained(bert_model_name)
+                bert_model = BertModel.from_pretrained(bert_model_name)
+            else : 
+                tokenizer = RobertaTokenizer(bert_model_name)
+                bert_model = RobertaModel(bert_model_name)
+            
+            bert_feature_vectors.append(get_bert_feature_vector(bert_model, tokenizer))
+
+        return bert_feature_vectors
+
+
+    def get_bert_feature_vector_size(featur_vector_format) :
+        config = None
+        if 'roberta' not in featur_vector_format :
+            config = BertConfig_from_pretrained(featur_vector_format)
+        else : 
+            config = RobertConfig_from_pretrained(featur_vector_format)
+        
+        return config.hidden.size
+        
+
+
+

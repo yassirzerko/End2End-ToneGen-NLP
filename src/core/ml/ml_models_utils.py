@@ -1,4 +1,4 @@
-from src.core.constants import MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, TONES_CONSTANTS, W2V_MODEL_NAMES
+from src.core.constants import MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, TONES_CONSTANTS, W2V_MODEL_NAMES, BERT_MODELS_NAMES
 from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 import pandas as pd
 from sklearn.preprocessing import LabelBinarizer, LabelEncoder
@@ -101,8 +101,9 @@ class MlModelsUtils :
             else : 
                 feature_vector = tf_idf_feature_vector
         
-        else :
-            feature_vectors_by_model =  NlpFeaturesUtils.generate_word2vec_feature_vectors(input_text)
+        elif 'w2v' in feature_vector_format:
+            w2v_converters = NlpFeaturesUtils.load_word2vec_converters()
+            feature_vectors_by_model =  NlpFeaturesUtils.generate_word2vec_feature_vectors(input_text, w2v_converters)
             for (converted_idx, (max_dims, sum_dims, mean_dims)) in enumerate(feature_vectors_by_model): 
                 if W2V_MODEL_NAMES[converted_idx] in feature_vector_format :
                    
@@ -116,6 +117,15 @@ class MlModelsUtils :
                         feature_vector = mean_dims
                     
                     break
+        
+        else :
+            bert_feature_vectors = NlpFeaturesUtils.generate_bert_feature_vectors(input_text)
+
+            for model_idx, model_name in enumerate(BERT_MODELS_NAMES) :
+                if model_name == feature_vector_format :
+                    feature_vector = bert_feature_vectors[model_idx]
+                    break
+
         
         df = pd.DataFrame(np.array(feature_vector).reshape(1,-1), columns=[idx for idx in range(len(feature_vector))])
         prediction = model.predict(df)
