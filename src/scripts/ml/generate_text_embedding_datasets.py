@@ -4,12 +4,12 @@ from src.core.ml.ml_dataset_utils import MlDatasetUtils
 from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 import sys
 from src.core.read_env import get_env_variables
-from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, W2V_MODEL_NAMES
+from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, W2V_MODEL_NAMES, BERT_MODELS_NAMES
 from src.core.text_generation.mongo_client import Mongo_Client
 import traceback
 
 
-import gensim.downloader as gensim_downloader
+
 import re
 
 def generate_text_embedding_split_csv(data, vocabulary, words_idf_data, output_folder, file_name) : 
@@ -49,12 +49,15 @@ def generate_text_embedding_split_csv(data, vocabulary, words_idf_data, output_f
 
 
     w2v_converters = NlpFeaturesUtils.load_word2vec_converters()
+    bert_converters = NlpFeaturesUtils.load_bert_converters()
     for entry in data :
         new_row = [str(entry[MONGO_DB_CONSTANTS.ID_FIELD]), entry[MONGO_DB_CONSTANTS.TONE_FIELD]]
         bow_feature_vector, tf_idf_feature_vector = NlpFeaturesUtils.generate_bow_tf_idf_feature_vectors(entry[MONGO_DB_CONSTANTS.TEXT_FIELD], words_idf_data, vocabulary)
 
         writers[0].writerow(new_row + bow_feature_vector)
         writers[1].writerow(new_row + tf_idf_feature_vector)
+        
+        
         w2v_features_by_models = NlpFeaturesUtils.generate_word2vec_feature_vectors(entry[MONGO_DB_CONSTANTS.TEXT_FIELD], w2v_converters)
 
         writer_idx = 2
@@ -64,7 +67,7 @@ def generate_text_embedding_split_csv(data, vocabulary, words_idf_data, output_f
                 writers[writer_idx + 2].writerow(new_row + mean)
                 writer_idx += 3
         
-        bert_features_by_models = NlpFeaturesUtils.generate_bert_feature_vectors(entry[MONGO_DB_CONSTANTS.TEXT_FIELD])
+        bert_features_by_models = NlpFeaturesUtils.generate_bert_feature_vectors(entry[MONGO_DB_CONSTANTS.TEXT_FIELD], bert_converters)
         for idx in range(3) :
             writers[writer_idx].writerow(new_row + bert_features_by_models[idx])
             writer_idx += 1
@@ -104,14 +107,6 @@ if __name__ == '__main__' :
      Parameters:
     - output_folder (str): The folder where the trained datasets will be saved.
     """
-
-    # Download w2vec convert    
-    for converter_name in W2V_MODEL_NAMES : 
-        if  not os.path.exists(converter_name) :
-            w2v_converter = gensim_downloader.load(converter_name)
-            w2v_converter.save(converter_name)
-
-
     # Define output folder for storing datasets
     output_folder = "datasets"
 

@@ -131,7 +131,27 @@ if __name__ == "__main__" :
              {'n_estimators': 100, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt'},
              {'n_estimators': 200, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2'},
              {'n_estimators': 150, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'auto'},
-             {'n_estimators': 100, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt'}]
+             {'n_estimators': 100, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt'},
+             
+             {'n_estimators': 100, 'max_depth': None, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 200, 'max_depth': 50, 'criterion': 'entropy', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 100, 'criterion': 'gini', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'log2', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 100, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
+             {'n_estimators': 200, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2', 'class_weight' : 'balanced'},
+             {'n_estimators': 200, 'max_depth': 100, 'criterion': 'gini', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 100, 'max_depth': 50, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 100, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
+             {'n_estimators': 200, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'log2', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 100, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 100, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
+             {'n_estimators': 200, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'log2', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 100, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
+             {'n_estimators': 200, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 100, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt'}, 'class_weight' : 'balanced']
 
     
     
@@ -168,7 +188,17 @@ if __name__ == "__main__" :
     {'learning_rate': 0.01, 'max_iter': 150, 'max_depth': 3},
     {'learning_rate': 0.1, 'max_iter': 200, 'max_depth': 3},
     {'learning_rate': 0.05, 'max_iter': 200, 'max_depth': 3},
-    {'learning_rate': 0.01, 'max_iter': 200, 'max_depth': 3}
+    {'learning_rate': 0.01, 'max_iter': 200, 'max_depth': 3},
+
+    {'learning_rate': 0.1, 'max_iter': 100, 'max_depth': 3, 'class_weight':'balanced'},
+    {'learning_rate': 0.05, 'max_iter': 100, 'max_depth': 3, 'class_weight':'balanced'},
+    {'learning_rate': 0.01, 'max_iter': 100, 'max_depth': 3, 'class_weight':'balanced'},
+    {'learning_rate': 0.1, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
+    {'learning_rate': 0.05, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
+    {'learning_rate': 0.01, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
+    {'learning_rate': 0.1, 'max_iter': 200, 'max_depth': 3}, 'class_weight':'balanced',
+    {'learning_rate': 0.05, 'max_iter': 200, 'max_depth': 3, 'class_weight':'balanced'},
+    {'learning_rate': 0.01, 'max_iter': 200, 'max_depth': 3, 'class_weight':'balanced'}
     ]
 
 

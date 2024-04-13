@@ -119,7 +119,8 @@ class MlModelsUtils :
                     break
         
         else :
-            bert_feature_vectors = NlpFeaturesUtils.generate_bert_feature_vectors(input_text)
+            bert_converters = NlpFeaturesUtils.load_bert_converters()
+            bert_feature_vectors = NlpFeaturesUtils.generate_bert_feature_vectors(input_text,bert_converters)
 
             for model_idx, model_name in enumerate(BERT_MODELS_NAMES) :
                 if model_name == feature_vector_format :
