@@ -5,13 +5,17 @@ from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, Gradien
 from sklearn.neural_network import MLPClassifier
 import csv
 import threading
+import uuid
+
+
+
 
 # Locks for ensuring thread-safe access to shared resources
 feature_vector_format_folder_lock = threading.Lock()
 writer_lock = threading.Lock()
 max_threads = threading.active_count()
 
-def train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format) :
+def train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format,  model_uuid) :
     """
     Train, test, and save a machine learning model for each split of a dataset.
 
@@ -35,7 +39,7 @@ def train_test_save_model(n_split, dataset_folder, output_folder, model, feature
     
     feature_vector_format_folder_lock.release()
 
-    model_folder_path = os.path.join(feature_vector_format_folder, str(model))
+    model_folder_path = os.path.join(feature_vector_format_folder, f'{model.__class__.__name__}({model_uuid})')
     os.mkdir(model_folder_path) 
 
     split_test_accuracies = []
@@ -76,17 +80,21 @@ def hyper_params_search_train_test_save(n_split, dataset_folder, output_folder, 
     """
     training_data = []
     for params in params_list :
-        for feature_vector_format in FEATURE_FORMAT_CONSTANTS.FEATURES_NAMES:
-            model = model_constructor(**params)
-            model_folder_path, split_test_accuracies = train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format)
-            
-            for split_idx in range(len(split_test_accuracies)) :
-                accuracy = split_test_accuracies[split_idx]
-                model_path = os.path.join(model_folder_path, f'split{split_idx}.pkl')
-                training_data.append([str(model).split('(')[0], feature_vector_format, accuracy, model_path, split_idx])
+        model_param_config_uid  = uuid.uuid4()
+        try :
+            for feature_vector_format in FEATURE_FORMAT_CONSTANTS.FEATURES_NAMES:
+                model = model_constructor(**params)
+                model_folder_path, split_test_accuracies = train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format, model_param_config_uid)
+                
+                for split_idx in range(len(split_test_accuracies)) :
+                    accuracy = split_test_accuracies[split_idx]
+                    model_path = os.path.join(model_folder_path, f'split{split_idx}', f"{str(model)}.pkl")
+                    training_data.append([str(model).split('(')[0], model_param_config_uid, feature_vector_format, accuracy, model_path, split_idx])
+        except Exception as e : 
+            print(e)
 
     writer_lock.acquire()
-    writer.writerow(training_data)
+    writer.writerows(training_data)
     writer_lock.release()
     return training_data
 
@@ -108,50 +116,50 @@ if __name__ == "__main__" :
     summary_file_path = 'trained_models_data.csv'
     n_split = 3
 
-    file = open(summary_file_path, 'w+') 
+    file = open(summary_file_path, 'w+', newline='') 
     writer = csv.writer(file)
-    columns_names = ['model_name', 'feature_format', 'accuracy', 'path', 'split']
+    columns_names = ['model_name','param_uuid' 'feature_format', 'accuracy', 'path', 'split']
     writer.writerow(columns_names)
 
-    rf_params = [{'n_estimators': 100, 'max_depth': None, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'auto'},
+    rf_params = [{'n_estimators': 100, 'max_depth': None, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1},
              {'n_estimators': 200, 'max_depth': 50, 'criterion': 'entropy', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'sqrt'},
              {'n_estimators': 150, 'max_depth': 100, 'criterion': 'gini', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'log2'},
-             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'auto'},
+             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 10},
              {'n_estimators': 100, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt'},
              {'n_estimators': 200, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2'},
-             {'n_estimators': 200, 'max_depth': 100, 'criterion': 'gini', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'auto'},
+             {'n_estimators': 200, 'max_depth': 100, 'criterion': 'gini', 'min_samples_split': 10, 'min_samples_leaf': 5},
              {'n_estimators': 100, 'max_depth': 50, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt'},
-             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'auto'},
+             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2},
              {'n_estimators': 100, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'sqrt'},
              {'n_estimators': 200, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'log2'},
-             {'n_estimators': 150, 'max_depth': 100, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'auto'},
+             {'n_estimators': 150, 'max_depth': 100, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1},
              {'n_estimators': 100, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'sqrt'},
              {'n_estimators': 200, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'log2'},
-             {'n_estimators': 150, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'auto'},
+             {'n_estimators': 150, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10},
              {'n_estimators': 100, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt'},
              {'n_estimators': 200, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2'},
-             {'n_estimators': 150, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'auto'},
+             {'n_estimators': 150, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5},
              {'n_estimators': 100, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt'},
              
-             {'n_estimators': 100, 'max_depth': None, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 100, 'max_depth': None, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1, 'class_weight' : 'balanced'},
              {'n_estimators': 200, 'max_depth': 50, 'criterion': 'entropy', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
              {'n_estimators': 150, 'max_depth': 100, 'criterion': 'gini', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'log2', 'class_weight' : 'balanced'},
-             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 10, 'class_weight' : 'balanced'},
              {'n_estimators': 100, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
              {'n_estimators': 200, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2', 'class_weight' : 'balanced'},
-             {'n_estimators': 200, 'max_depth': 100, 'criterion': 'gini', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 200, 'max_depth': 100, 'criterion': 'gini', 'min_samples_split': 10, 'min_samples_leaf': 5, 'class_weight' : 'balanced'},
              {'n_estimators': 100, 'max_depth': 50, 'criterion': 'entropy', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
-             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 150, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'class_weight' : 'balanced'},
              {'n_estimators': 100, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
              {'n_estimators': 200, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'log2', 'class_weight' : 'balanced'},
-             {'n_estimators': 150, 'max_depth': 100, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 100, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1, 'class_weight' : 'balanced'},
              {'n_estimators': 100, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
              {'n_estimators': 200, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'log2', 'class_weight' : 'balanced'},
-             {'n_estimators': 150, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'auto', 'class_weight' : 'balanced'},
+             {'n_estimators': 150, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'class_weight' : 'balanced'},
              {'n_estimators': 100, 'max_depth': 150, 'criterion': 'entropy', 'min_samples_split': 2, 'min_samples_leaf': 1, 'max_features': 'sqrt', 'class_weight' : 'balanced'},
              {'n_estimators': 200, 'max_depth': 200, 'criterion': 'gini', 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2', 'class_weight' : 'balanced'},
-             {'n_estimators': 150, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'max_features': 'auto', 'class_weight' : 'balanced'},
-             {'n_estimators': 100, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt'}, 'class_weight' : 'balanced']
+             {'n_estimators': 150, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'class_weight' : 'balanced'},
+             {'n_estimators': 100, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt', 'class_weight' : 'balanced'}]
 
     
     
@@ -196,7 +204,7 @@ if __name__ == "__main__" :
     {'learning_rate': 0.1, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
     {'learning_rate': 0.05, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
     {'learning_rate': 0.01, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.1, 'max_iter': 200, 'max_depth': 3}, 'class_weight':'balanced',
+    {'learning_rate': 0.1, 'max_iter': 200, 'max_depth': 3, 'class_weight':'balanced'},
     {'learning_rate': 0.05, 'max_iter': 200, 'max_depth': 3, 'class_weight':'balanced'},
     {'learning_rate': 0.01, 'max_iter': 200, 'max_depth': 3, 'class_weight':'balanced'}
     ]
@@ -215,19 +223,24 @@ if __name__ == "__main__" :
 ]
 
 
-    search_params = [(RandomForestClassifier, rf_params), (AdaBoostClassifier, ada_params), (GradientBoostingClassifier, gb_params),(HistGradientBoostingClassifier, hgb_params),(HistGradientBoostingClassifier, hgb_params),(MLPClassifier, mlp_params)]
-    threads = []
-
+    #search_params = [(RandomForestClassifier, rf_params),(AdaBoostClassifier, ada_params), (GradientBoostingClassifier, gb_params),(HistGradientBoostingClassifier, hgb_params),(MLPClassifier, mlp_params)]
+    #threads = []
+    search_params = [(MLPClassifier, [{}])]
     # Start a thread for each model
     for model, params in search_params :
-        thread = threading.Thread(target=hyper_params_search_train_test_save, args=(n_split,dataset_folder, output_folder, model, params, writer))
-        threads.append(thread)
-        thread.start()
+        
+        hyper_params_search_train_test_save(n_split,dataset_folder, output_folder, model, params, writer)
+        #thread = threading.Thread(target=hyper_params_search_train_test_save, args=(n_split,dataset_folder, output_folder, model, params, writer))
+        #threads.append(thread)
+    
+
+    file.close()
+        
+
     
     # Wait for all threads to finish
-    for thread in threads :
-        thread.join()
+    #for thread in threads :
+    #    thread.join()
          
-    writer.close()
 
 

@@ -1,6 +1,5 @@
 import re
 import math 
-from gensim.models import KeyedVectors
 import json
 import os
 from src.core.constants import W2V_MODEL_NAMES, BERT_MODELS_NAMES
@@ -8,6 +7,7 @@ from transformers import BertTokenizer, BertModel, RobertaTokenizer, RobertaMode
 import torch
 from transformers import BertConfig, RobertaConfig
 import gensim.downloader as gensim_downloader
+
 
 class NlpFeaturesUtils : 
     @staticmethod
@@ -161,12 +161,14 @@ class NlpFeaturesUtils :
         """
 
         converters_data = []
-        for word2vec_converter  in enumerate(w2v_converters) :
+        for converter_idx, word2vec_converter  in enumerate(w2v_converters) :
+            converter_name = W2V_MODEL_NAMES[converter_idx]
+            n_w2v_dim = int(re.search(r'\d+', converter_name[3:]).group())
 
             words = re.split(r'\W+', text)
-
-            max_dims = [- math.inf ] * 300
-            sum_dims = [0] * 300
+            
+            max_dims = [- math.inf ] * n_w2v_dim
+            sum_dims = [0] * n_w2v_dim
             word_counter = 0
             for word in words : 
                 if word == '' : 

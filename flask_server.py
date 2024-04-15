@@ -3,11 +3,15 @@ from flask import request
 from flask_cors import CORS
 from src.core.constants import FEATURE_FORMAT_CONSTANTS
 from src.core.ml.ml_models_utils import MlModelsUtils
+from src.core.ml.ml_models_utils import NlpFeaturesUtils
 import os 
 import csv
 
 app = flask.Flask(__name__)
 CORS(app)
+
+w2v_converters = NlpFeaturesUtils.load_word2vec_converters()
+bert_converters = NlpFeaturesUtils.load_bert_converters()
 
 def get_idf_voc_path(split_idx) :
     idf_file_path = os.path.join('datasets', f'split{split_idx}', 'tf-idf-data.json')
@@ -27,7 +31,7 @@ def get_best_models_data() :
     next(reader) 
     best_models_data = {}
     for row in reader : 
-        model_name, feature_format, accuracy, path, split_idx = row
+        model_name, uuid, feature_format, accuracy, path, split_idx = row
 
         if model_name not in best_models_data :
             best_models_data[model_name] = {}
@@ -84,6 +88,6 @@ def make_prediction() :
     input_text = request.args['input_text']
     models_data = get_best_models_data()
     idf_file_path, voc_file_path = get_idf_voc_path(models_data[model_name][feature_vec]['split_idx'])
-    prediction = MlModelsUtils.use_trained_model_to_predict_tone(models_data[model_name][feature_vec]['path'], input_text, feature_vec, idf_file_path, voc_file_path)
+    prediction = MlModelsUtils.use_trained_model_to_predict_tone(models_data[model_name][feature_vec]['path'], input_text, feature_vec, idf_file_path, voc_file_path, w2v_converters, bert_converters)
     return {'prediction' : prediction}
     

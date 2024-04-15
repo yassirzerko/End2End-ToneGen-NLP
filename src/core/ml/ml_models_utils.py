@@ -43,18 +43,18 @@ class MlModelsUtils :
 
         train_predictions = model.predict(X_train)
         train_classification_report = classification_report(train_predictions, y_train)
-        train_classification_file_report = open(os.path.join(save_folder, 'train_report.txt'), 'w+')
+        train_classification_file_report = open(os.path.join(save_folder, 'train_report.txt'), 'w+', newline='')
         train_classification_file_report.write(train_classification_report)
         train_classification_file_report.close()
 
 
         test_preds = model.predict(X_test)
         test_classification_report = classification_report(y_test, test_preds)
-        test_classification_report_file = open(os.path.join(save_folder, 'test_report.txt'), 'w+')
+        test_classification_report_file = open(os.path.join(save_folder, 'test_report.txt'), 'w+',  newline='')
         test_classification_report_file.write(test_classification_report)
         test_classification_report_file.close()
   
-        with open(os.path.join(save_folder, 'predictions.csv'), 'w+') as predictions_file : 
+        with open(os.path.join(save_folder, 'predictions.csv'), 'w+', newline='') as predictions_file : 
             writer = csv.writer(predictions_file)
             writer.writerow(['_id', 'label', 'prediction'])
 
@@ -67,7 +67,7 @@ class MlModelsUtils :
         return test_accuracy
 
     @staticmethod
-    def use_trained_model_to_predict_tone(model_path, input_text, feature_vector_format, idf_data_path, vocabulary_data_path) :
+    def use_trained_model_to_predict_tone(model_path, input_text, feature_vector_format, idf_data_path, vocabulary_data_path, w2v_converters, bert_models_tokenizers) :
         """
         Uses a trained machine learning model to predict the tone of the given input text.
 
@@ -77,11 +77,12 @@ class MlModelsUtils :
         - feature_vector_format: The format of the feature vectors.
         - idf_data_path: The path to the IDF data file.
         - vocabulary_data_path : The path to the vocablary data file.
+        - w2v_converters (list): List of Word2Vec converters.
+        - bert_models_tokenizers (list): A list containing tuples of pre-trained BERT or RoBERTa models along with their tokenizers.
 
         Returns:
         - prediction: The predicted tone of the input text.
         """
-    
 
         model = joblib.load(model_path)
 
@@ -102,7 +103,6 @@ class MlModelsUtils :
                 feature_vector = tf_idf_feature_vector
         
         elif 'w2v' in feature_vector_format:
-            w2v_converters = NlpFeaturesUtils.load_word2vec_converters()
             feature_vectors_by_model =  NlpFeaturesUtils.generate_word2vec_feature_vectors(input_text, w2v_converters)
             for (converted_idx, (max_dims, sum_dims, mean_dims)) in enumerate(feature_vectors_by_model): 
                 if W2V_MODEL_NAMES[converted_idx] in feature_vector_format :
@@ -119,8 +119,7 @@ class MlModelsUtils :
                     break
         
         else :
-            bert_converters = NlpFeaturesUtils.load_bert_converters()
-            bert_feature_vectors = NlpFeaturesUtils.generate_bert_feature_vectors(input_text,bert_converters)
+            bert_feature_vectors = NlpFeaturesUtils.generate_bert_feature_vectors(input_text,bert_models_tokenizers)
 
             for model_idx, model_name in enumerate(BERT_MODELS_NAMES) :
                 if model_name == feature_vector_format :
