@@ -39,7 +39,7 @@ class MlModelsUtils :
         y_test = encoder.transform(y_test)
 
         model.fit(X_train, y_train)
-        joblib.dump(model, os.path.join(save_folder, str(model) + '.pkl'))
+        joblib.dump(model, os.path.join(save_folder, f'{model.__class__.__name__}.pkl'))
 
         train_predictions = model.predict(X_train)
         train_classification_report = classification_report(train_predictions, y_train)

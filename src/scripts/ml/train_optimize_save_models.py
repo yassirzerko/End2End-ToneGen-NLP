@@ -1,19 +1,10 @@
 from src.core.ml.ml_models_utils import MlModelsUtils
-from src.core.constants import FEATURE_FORMAT_CONSTANTS
+from src.core.constants import FEATURE_FORMAT_CONSTANTS, PATH_NAME_CONSTANTS
 import os
-from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, HistGradientBoostingClassifier
 from sklearn.neural_network import MLPClassifier
 import csv
-import threading
 import uuid
-
-
-
-
-# Locks for ensuring thread-safe access to shared resources
-feature_vector_format_folder_lock = threading.Lock()
-writer_lock = threading.Lock()
-max_threads = threading.active_count()
 
 def train_test_save_model(n_split, dataset_folder, output_folder, model, feature_vector_format,  model_uuid) :
     """
@@ -32,14 +23,11 @@ def train_test_save_model(n_split, dataset_folder, output_folder, model, feature
     """
     feature_vector_format_folder = os.path.join(output_folder, feature_vector_format)
 
-    # Acquire lock to ensure safe creation of feature vector format folder
-    feature_vector_format_folder_lock.acquire()
     if not os.path.exists(feature_vector_format_folder) :
             os.mkdir(feature_vector_format_folder)
     
-    feature_vector_format_folder_lock.release()
 
-    model_folder_path = os.path.join(feature_vector_format_folder, f'{model.__class__.__name__}({model_uuid})')
+    model_folder_path = os.path.join(feature_vector_format_folder, f'{model.__class__.__name__}-{model_uuid}')
     os.mkdir(model_folder_path) 
 
     split_test_accuracies = []
@@ -88,14 +76,12 @@ def hyper_params_search_train_test_save(n_split, dataset_folder, output_folder, 
                 
                 for split_idx in range(len(split_test_accuracies)) :
                     accuracy = split_test_accuracies[split_idx]
-                    model_path = os.path.join(model_folder_path, f'split{split_idx}', f"{str(model)}.pkl")
-                    training_data.append([str(model).split('(')[0], model_param_config_uid, feature_vector_format, accuracy, model_path, split_idx])
+                    model_path = os.path.join(model_folder_path, f'split{split_idx}', f'{model.__class__.__name__}.pkl')
+                    training_data.append([f'{model.__class__.__name__}', model_param_config_uid, feature_vector_format, accuracy, model_path, split_idx])
         except Exception as e : 
             print(e)
 
-    writer_lock.acquire()
     writer.writerows(training_data)
-    writer_lock.release()
     return training_data
 
 if __name__ == "__main__" :
@@ -104,6 +90,8 @@ if __name__ == "__main__" :
     evaluate their performance on test data, and save the trained models 
     along with their evaluation results to a CSV file.
 
+    Require the folder output results of the script src.scripts.ml.generate_text_embedding_datasets
+
     Parameters:
     - dataset_folder: The folder containing the dataset.
     - output_folder: The folder where the trained models and evaluation results will be saved.
@@ -111,14 +99,25 @@ if __name__ == "__main__" :
     - n_split: The number of splits for cross-validation.
     """
 
-    dataset_folder = 'datasets'
-    output_folder = 'models_training'
-    summary_file_path = 'trained_models_data.csv'
+    dataset_folder = PATH_NAME_CONSTANTS.GENERATED_DATASETS
+    output_folder = PATH_NAME_CONSTANTS.TRAINED_MODELS
+    summary_file_path = PATH_NAME_CONSTANTS.TRAINED_MODELS_DATA_FILE
     n_split = 3
 
+    if os.path.exists(output_folder) :
+        print(f'Folder {output_folder} already exist')
+        exit(1)
+    
+    if os.path.exists(summary_file_path) :
+        print(f'File {summary_file_path} already exist')
+        exit(1)
+    
+
+    
+    os.mkdir(output_folder)
     file = open(summary_file_path, 'w+', newline='') 
     writer = csv.writer(file)
-    columns_names = ['model_name','param_uuid' 'feature_format', 'accuracy', 'path', 'split']
+    columns_names = ['model_name','config_uuid', 'feature_format', 'accuracy', 'trained_model_path', 'split']
     writer.writerow(columns_names)
 
     rf_params = [{'n_estimators': 100, 'max_depth': None, 'criterion': 'gini', 'min_samples_split': 2, 'min_samples_leaf': 1},
@@ -161,52 +160,49 @@ if __name__ == "__main__" :
              {'n_estimators': 150, 'max_depth': None, 'criterion': 'entropy', 'min_samples_split': 10, 'min_samples_leaf': 5, 'class_weight' : 'balanced'},
              {'n_estimators': 100, 'max_depth': 50, 'criterion': 'gini', 'min_samples_split': 20, 'min_samples_leaf': 10, 'max_features': 'sqrt', 'class_weight' : 'balanced'}]
 
-    
-    
 
-    ada_params = [{'n_estimators': 50, 'learning_rate': 1.0},
-              {'n_estimators': 100, 'learning_rate': 1.0},
-              {'n_estimators': 200, 'learning_rate': 1.0},
-              {'n_estimators': 50, 'learning_rate': 0.5},
-              {'n_estimators': 100, 'learning_rate': 0.5},
-              {'n_estimators': 200, 'learning_rate': 0.5},
-              {'n_estimators': 50, 'learning_rate': 0.1},
-              {'n_estimators': 100, 'learning_rate': 0.1},
-              {'n_estimators': 200, 'learning_rate': 0.1}]
-    
+    gb_params = [{'learning_rate': 0.1, 'n_estimators': 100, 'max_depth': 3},
+                 {'learning_rate': 0.05, 'n_estimators': 100, 'max_depth': 3},
+                 {'learning_rate': 0.01, 'n_estimators': 100, 'max_depth': 3},
+                 {'learning_rate': 0.1, 'n_estimators': 150, 'max_depth': 3},
+                 {'learning_rate': 0.05, 'n_estimators': 150, 'max_depth': 3},
+                 {'learning_rate': 0.01, 'n_estimators': 150, 'max_depth': 3},
+                 {'learning_rate': 0.1, 'n_estimators': 200, 'max_depth': 3},
+                 {'learning_rate': 0.05, 'n_estimators': 200, 'max_depth': 3},
+                 {'learning_rate': 0.01, 'n_estimators': 200, 'max_depth': 3},
 
-    gb_params = [{'learning_rate': 0.1, 'n_estimators': 100, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None},
-             {'learning_rate': 0.05, 'n_estimators': 100, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None},
-             {'learning_rate': 0.01, 'n_estimators': 100, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None},
-             {'learning_rate': 0.1, 'n_estimators': 150, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None},
-             {'learning_rate': 0.05, 'n_estimators': 150, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None},
-             {'learning_rate': 0.01, 'n_estimators': 150, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None},
-             {'learning_rate': 0.1, 'n_estimators': 200, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None},
-             {'learning_rate': 0.05, 'n_estimators': 200, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None},
-             {'learning_rate': 0.01, 'n_estimators': 200, 'max_depth': 3, 'min_samples_split': 2, 'min_samples_leaf': 1, 'subsample': 1.0, 'max_features': None}]
-
+                 {'learning_rate': 0.1, 'n_estimators': 100, 'max_depth': 6},
+                 {'learning_rate': 0.05, 'n_estimators': 100, 'max_depth': 6},
+                 {'learning_rate': 0.01, 'n_estimators': 100, 'max_depth': 6},
+                 {'learning_rate': 0.1, 'n_estimators': 150, 'max_depth': 6},
+                 {'learning_rate': 0.05, 'n_estimators': 150, 'max_depth': 6},
+                 {'learning_rate': 0.01, 'n_estimators': 150, 'max_depth': 6},
+                 {'learning_rate': 0.1, 'n_estimators': 200, 'max_depth': 6},
+                 {'learning_rate': 0.05, 'n_estimators': 200, 'max_depth': 6},
+                 {'learning_rate': 0.01, 'n_estimators': 200, 'max_depth': 6},
+             ]
     
     
     hgb_params = [
-    {'learning_rate': 0.1, 'max_iter': 100, 'max_depth': 3},
-    {'learning_rate': 0.05, 'max_iter': 100, 'max_depth': 3},
-    {'learning_rate': 0.01, 'max_iter': 100, 'max_depth': 3},
-    {'learning_rate': 0.1, 'max_iter': 150, 'max_depth': 3},
-    {'learning_rate': 0.05, 'max_iter': 150, 'max_depth': 3},
-    {'learning_rate': 0.01, 'max_iter': 150, 'max_depth': 3},
-    {'learning_rate': 0.1, 'max_iter': 200, 'max_depth': 3},
-    {'learning_rate': 0.05, 'max_iter': 200, 'max_depth': 3},
-    {'learning_rate': 0.01, 'max_iter': 200, 'max_depth': 3},
+    {'learning_rate': 0.1, 'max_iter': 100},
+    {'learning_rate': 0.05, 'max_iter': 100},
+    {'learning_rate': 0.01, 'max_iter': 100},
+    {'learning_rate': 0.1, 'max_iter': 150},
+    {'learning_rate': 0.05, 'max_iter': 150},
+    {'learning_rate': 0.01, 'max_iter': 150},
+    {'learning_rate': 0.1, 'max_iter': 200},
+    {'learning_rate': 0.05, 'max_iter': 200},
+    {'learning_rate': 0.01, 'max_iter': 200},
 
-    {'learning_rate': 0.1, 'max_iter': 100, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.05, 'max_iter': 100, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.01, 'max_iter': 100, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.1, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.05, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.01, 'max_iter': 150, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.1, 'max_iter': 200, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.05, 'max_iter': 200, 'max_depth': 3, 'class_weight':'balanced'},
-    {'learning_rate': 0.01, 'max_iter': 200, 'max_depth': 3, 'class_weight':'balanced'}
+    {'learning_rate': 0.1, 'max_iter': 100,  'class_weight':'balanced'},
+    {'learning_rate': 0.05, 'max_iter': 100,  'class_weight':'balanced'},
+    {'learning_rate': 0.01, 'max_iter': 100,  'class_weight':'balanced'},
+    {'learning_rate': 0.1, 'max_iter': 150,  'class_weight':'balanced'},
+    {'learning_rate': 0.05, 'max_iter': 150,  'class_weight':'balanced'},
+    {'learning_rate': 0.01, 'max_iter': 150, 'class_weight':'balanced'},
+    {'learning_rate': 0.1, 'max_iter': 200, 'class_weight':'balanced'},
+    {'learning_rate': 0.05, 'max_iter': 200,  'class_weight':'balanced'},
+    {'learning_rate': 0.01, 'max_iter': 200, 'class_weight':'balanced'}
     ]
 
 
@@ -223,24 +219,11 @@ if __name__ == "__main__" :
 ]
 
 
-    #search_params = [(RandomForestClassifier, rf_params),(AdaBoostClassifier, ada_params), (GradientBoostingClassifier, gb_params),(HistGradientBoostingClassifier, hgb_params),(MLPClassifier, mlp_params)]
-    #threads = []
-    search_params = [(MLPClassifier, [{}])]
-    # Start a thread for each model
+    search_params = [(RandomForestClassifier, rf_params), (MLPClassifier, mlp_params), (GradientBoostingClassifier, gb_params),(HistGradientBoostingClassifier, hgb_params)]
+    #search_params = [(RandomForestClassifier, [{}]), (GradientBoostingClassifier, [{}]),(HistGradientBoostingClassifier, [{}]),(MLPClassifier, [{}])]
     for model, params in search_params :
         
-        hyper_params_search_train_test_save(n_split,dataset_folder, output_folder, model, params, writer)
-        #thread = threading.Thread(target=hyper_params_search_train_test_save, args=(n_split,dataset_folder, output_folder, model, params, writer))
-        #threads.append(thread)
-    
+        hyper_params_search_train_test_save(n_split,dataset_folder, output_folder, model, params, writer)    
 
     file.close()
         
-
-    
-    # Wait for all threads to finish
-    #for thread in threads :
-    #    thread.join()
-         
-
-

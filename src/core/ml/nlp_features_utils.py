@@ -82,6 +82,16 @@ class NlpFeaturesUtils :
         return words_idf, vocabulary
     
     @staticmethod
+    def get_idf_voc_path(split_idx) :
+        """
+        Get file paths for IDF and vocabulary data based on the split index.
+        """
+        idf_file_path = os.path.join('datasets', f'split{split_idx}', 'tf-idf-data.json')
+        voc_file_path = os.path.join('datasets', f'split{split_idx}', 'voc.json')
+        
+        return idf_file_path, voc_file_path
+    
+    @staticmethod
     def generate_bow_tf_idf_feature_vectors(text, idf_data = None, vocabulary = None, idf_data_file_path = None, vocabulary_file_path = None) :
         """
         Generates Bag-of-Words (BoW) and TF-IDF feature vectors for the given text.

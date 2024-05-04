@@ -64,3 +64,8 @@ class FEATURE_FORMAT_CONSTANTS:
 
     FEATURES_NAMES = [BOW, TF_IDF]  + W2V_FEATURES + BERT_MODELS_NAMES
 
+class PATH_NAME_CONSTANTS :
+    GENERATED_DATASETS = 'datasets'
+    TRAINED_MODELS = 'trained_models'
+    TRAINED_MODELS_DATA_FILE = 'trained_models_data.csv'
+

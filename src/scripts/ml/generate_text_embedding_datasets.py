@@ -4,7 +4,7 @@ from src.core.ml.ml_dataset_utils import MlDatasetUtils
 from src.core.ml.nlp_features_utils import NlpFeaturesUtils
 import sys
 from src.core.read_env import get_env_variables
-from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS
+from src.core.constants import ENV_CONSTANTS, MONGO_DB_CONSTANTS, FEATURE_FORMAT_CONSTANTS, PATH_NAME_CONSTANTS
 from src.core.text_generation.mongo_client import Mongo_Client
 import traceback
 
@@ -106,7 +106,13 @@ if __name__ == '__main__' :
     - output_folder (str): The folder where the trained datasets will be saved.
     """
     # Define output folder for storing datasets
-    output_folder = "datasets"
+    output_folder = PATH_NAME_CONSTANTS.GENERATED_DATASETS
+
+    if os.path.exists(output_folder) :
+        print(f'Folder {output_folder} already exist')
+        exit(1)
+    
+    os.mkdir(output_folder)
 
     # Retrieve environment variables
     env_variables, error, error_msg = get_env_variables() 
@@ -122,7 +128,6 @@ if __name__ == '__main__' :
       
         # Get balanced k-fold splits
         splits = MlDatasetUtils.get_k_folds_balanced_splits_ids(mongo_client, k=3)
-        
         
         # Iterate over splits
         for split_idx, split in enumerate(splits):
