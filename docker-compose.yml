@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  client:
+    build:
+      context: ./client
+    ports:
+      - "${CLIENT_PORT}:3000"  # Use the environment variable CLIENT_PORT
+
+  server:
+    build:
+      context: ./server
+

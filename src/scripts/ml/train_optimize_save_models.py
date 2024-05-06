@@ -104,6 +104,7 @@ if __name__ == "__main__" :
     summary_file_path = PATH_NAME_CONSTANTS.TRAINED_MODELS_DATA_FILE
     n_split = 3
 
+    '''
     if os.path.exists(output_folder) :
         print(f'Folder {output_folder} already exist')
         exit(1)
@@ -111,8 +112,7 @@ if __name__ == "__main__" :
     if os.path.exists(summary_file_path) :
         print(f'File {summary_file_path} already exist')
         exit(1)
-    
-
+     '''
     
     os.mkdir(output_folder)
     file = open(summary_file_path, 'w+', newline='') 

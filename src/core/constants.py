@@ -67,5 +67,5 @@ class FEATURE_FORMAT_CONSTANTS:
 class PATH_NAME_CONSTANTS :
     GENERATED_DATASETS = 'datasets'
     TRAINED_MODELS = 'trained_models'
-    TRAINED_MODELS_DATA_FILE = 'trained_models_data.csv'
+    TRAINED_MODELS_DATA_FILE = f'{TRAINED_MODELS}/trained_models_data.csv'
 

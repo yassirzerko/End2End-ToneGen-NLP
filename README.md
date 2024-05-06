@@ -1,4 +1,4 @@
-# End2End Machine learning project: From automated text generation to deployed tone classifier
+# End2End Machine learning project: From automated text generation to docker deployable tone classifier
 
 ## Overview
 This project aims to generate text of various sizes and tones using the OpenAI API, store the generated texts in MongoDB Atlas, analyze and clean them, apply different word embedding NLP techniques (Bag of Words, TF-IDF, Word2Vec) with various models, and finally deploy the best-performing model as a Flask API and provide access to it throught a simple `React` client. The **end goal** is to predict the tone of input text.
@@ -10,7 +10,25 @@ This project aims to generate text of various sizes and tones using the OpenAI A
     with 5 different Word2Vec models for words embedding, and 3 BERT models for text embedding.
 - Perform hyperparameter search for various models for all text embedding datasets and store the predictions and models.
 - Deploy the best-performing model as a Flask API for tone prediction.
-- Provide a user-friendly interface for the tone predictor through a simple React application.
+- Provide a user-friendly interface for the tone predictor through a simple React docker application.
+
+## Setup
+1. **Ensure docker and docker-compose are installed on your system.**
+2. **Make the start.sh script executable**
+   Before running the script, ensure that it has the execute permission set. If not, use the following command to make it executable
+
+   ```bash
+   chmod +x deploy.sh
+3. **Run the start.sh script and specify the client port number**
+   ```bash
+   ./start.sh \$PORT
+Replace \$PORT with the desired port number. 
+If no pre-trained machine learning models (*.pkl files) are found in the trained_models directory or its subdirectories, the script initiates the training of models using Docker containers.
+
+### Optional: Text generation features (No available in container)
+**Copy the `.env-template` file and rename the copy to `.env` and fill the required values in the new `.env` file.**
+   - This step is required if you want to use the generation data features (generating texts and saving in MongoDB Atlas). 
+   - Make sure you have an OpenAI API key and a MongoDB URI to fill in the `.env` file.
 
 ## Scripts 
 The project comprises various distinct scripts, each serving a specific purpose. Here are their functionalities.
@@ -78,12 +96,4 @@ RoBERTa (Robustly optimized BERT approach) is another variant of the BERT model 
 
 Each of these text embedding techniques captures different aspects of the input text, allowing for a comprehensive representation suitable for various machine learning tasks.
 
-## Setup
-1. **Ensure Python and pip are installed on your system.**
-2. **Install the required dependencies in the root folder:**
-   ```bash
-   pip install -r requirements.txt
-3. **Copy the `.env-template` file and rename the copy to `.env` and fill the required values in the new `.env` file.**
-   - This step is required if you want to use the generation data features (generating texts and saving in MongoDB Atlas). 
-   - Make sure you have an OpenAI API key and a MongoDB URI to fill in the `.env` file.
 
