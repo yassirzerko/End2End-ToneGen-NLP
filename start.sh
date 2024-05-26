@@ -24,12 +24,6 @@ fi
 
 docker-compose up -e CLIENT_PORT="$CLIENT_PORT"
 
-
-
-
-
-
-
 # Run Docker containers based on the images
 docker run -d -p 5000:5000 --name flask-container my-flask-app
 docker run -d -p 3000:3000 --name node-container my-node-app
