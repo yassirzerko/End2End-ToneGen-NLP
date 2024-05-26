@@ -18,7 +18,7 @@ This project aims to generate text of various sizes and tones using the OpenAI A
    Before running the script, ensure that it has the execute permission set. If not, use the following command to make it executable
 
    ```bash
-   chmod +x deploy.sh
+   chmod +x start.sh
 3. **Run the start.sh script and specify the client port number**
    ```bash
    ./start.sh \$PORT
